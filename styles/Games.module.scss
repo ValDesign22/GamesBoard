@@ -62,3 +62,335 @@
         }
     }
 }
+
+.roomSelector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+
+    .container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-evenly;
+        height: auto;
+        width: 100%;
+        padding: 1rem;
+        background: rgb(33, 33, 33);
+        color: rgb(255, 255, 255);
+        border-radius: 0.5rem;
+        box-shadow: 0 0 0.5rem 0.5rem rgb(0, 0, 0);
+
+        .roomJoin {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            max-width: 500px;
+            padding: 1rem;
+            background: rgb(33, 33, 33);
+            color: rgb(255, 255, 255);
+            border-radius: 0.5rem;
+            box-shadow: 0 0 0.5rem 0.5rem rgb(0, 0, 0);
+
+            h2 {
+                font-size: 2rem;
+                font-weight: 700;
+                margin: 1rem;
+            }
+
+            .roomJoinForm {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                width: 100%;
+                max-width: 500px;
+                padding: 1rem;
+                background: rgb(33, 33, 33);
+                color: rgb(255, 255, 255);
+                border-radius: 0.5rem;
+                box-shadow: 0 0 0.5rem 0.5rem rgb(0, 0, 0);
+
+                label {
+                    font-size: 1.5rem;
+                    font-weight: 400;
+                    margin-bottom: 1rem;
+                }
+                
+                input {
+                    font-size: 1.5rem;
+                    font-weight: 400;
+                    margin-bottom: 1rem;
+                    padding: 0.5rem;
+                    border-radius: 0.5rem;
+                    border: 1px solid rgb(255, 255, 255);
+                    background: rgb(33, 33, 33);
+                    color: rgb(255, 255, 255);
+                    transition: border 0.15s ease;
+
+                    &:focus {
+                        outline: none;
+                    }
+
+                    &::placeholder {
+                        color: rgb(255, 255, 255);
+                    }
+
+                    &:hover {
+                        border: 1px solid rgb(0, 0, 255);
+                    }
+                }
+
+                button {
+                    font-size: 1.5rem;
+                    font-weight: 400;
+                    margin-bottom: 1rem;
+                    padding: 0.5rem;
+                    border-radius: 0.5rem;
+                    border: 1px solid rgb(255, 255, 255);
+                    background: rgb(33, 33, 33);
+                    color: rgb(255, 255, 255);
+                    transition: border 0.15s ease;
+                    cursor: pointer;
+
+                    &:focus {
+                        outline: none;
+                    }
+
+                    &:hover {
+                        border: 1px solid rgb(0, 0, 255);
+                    }
+                }
+            }
+
+            .roomList {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                width: 100%;
+                max-width: 500px;
+                padding: 1rem;
+                background: rgb(33, 33, 33);
+                color: rgb(255, 255, 255);
+                border-radius: 0.5rem;
+                box-shadow: 0 0 0.5rem 0.5rem rgb(0, 0, 0);
+
+                h3 {
+                    font-size: 1.5rem;
+                    font-weight: 400;
+                    margin-bottom: 1rem;
+                }
+
+                .room {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: space-between;
+                    height: 10rem;
+                    width: 100%;
+                    max-width: 500px;
+                    padding: 1rem;
+                    background: rgb(33, 33, 33);
+                    color: rgb(255, 255, 255);
+                    border-radius: 0.5rem;
+                    box-shadow: 0 0 0.5rem 0.5rem rgb(0, 0, 0);
+                    margin-bottom: 1rem;
+
+                    h3 {
+                        font-size: 1.5rem;
+                        font-weight: 400;
+                        margin-bottom: 1rem;
+                    }
+
+                    p {
+                        font-size: 1.5rem;
+                        font-weight: 400;
+                        margin-bottom: 1rem;
+                    }
+
+                    button {
+                        font-size: 1.5rem;
+                        font-weight: 400;
+                        margin-bottom: 1rem;
+                        padding: 0.5rem;
+                        border-radius: 0.5rem;
+                        border: 1px solid rgb(255, 255, 255);
+                        background: rgb(33, 33, 33);
+                        color: rgb(255, 255, 255);
+                        transition: border 0.15s ease;
+                        cursor: pointer;
+
+                        &:focus {
+                            outline: none;
+                        }
+
+                        &:hover {
+                            border: 1px solid rgb(0, 0, 255);
+                        }
+                    }
+                }
+            }
+        }
+
+        .roomCreate {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            max-width: 500px;
+            
+            div {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                width: 100%;
+                max-width: 500px;
+                padding: 1rem;
+                background: rgb(33, 33, 33);
+                color: rgb(255, 255, 255);
+                border-radius: 0.5rem;
+                box-shadow: 0 0 0.5rem 0.5rem rgb(0, 0, 0);
+
+                h2 {
+                    
+                    font-size: 2rem;
+                    font-weight: 700;
+                    margin-bottom: 1rem;
+                }
+
+                form {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100%;
+                    width: 100%;
+                    max-width: 500px;
+                    padding: 1rem;
+                    background: rgb(33, 33, 33);
+                    color: rgb(255, 255, 255);
+                    border-radius: 0.5rem;
+                    box-shadow: 0 0 0.5rem 0.5rem rgb(0, 0, 0);
+
+                    label {
+                        font-size: 1.5rem;
+                        font-weight: 400;
+                        margin-bottom: 1rem;
+                    }
+                    
+                    input {
+                        font-size: 1.5rem;
+                        font-weight: 400;
+                        margin-bottom: 1rem;
+                        padding: 0.5rem;
+                        border-radius: 0.5rem;
+                        border: 1px solid rgb(255, 255, 255);
+                        background: rgb(33, 33, 33);
+                        color: rgb(255, 255, 255);
+                        transition: border 0.15s ease;
+
+                        &:focus {
+                            outline: none;
+                        }
+
+                        &::placeholder {
+                            color: rgb(255, 255, 255);
+                        }
+
+                        &:hover {
+                            border: 1px solid rgb(0, 0, 255);
+                        }
+                    }
+
+                    select {
+                        font-size: 1.5rem;
+                        font-weight: 400;
+                        margin-bottom: 1rem;
+                        padding: 0.5rem;
+                        border-radius: 0.5rem;
+                        border: 1px solid rgb(255, 255, 255);
+                        background: rgb(33, 33, 33);
+                        color: rgb(255, 255, 255);
+                        transition: border 0.15s ease;
+                        position: relative;
+
+                        &:focus {
+                            outline: none;
+                        }
+
+                        &:hover {
+                            border: 1px solid rgb(0, 0, 255);
+                        }
+
+                        &::placeholder {
+                            color: rgb(255, 255, 255);
+                        }
+
+                        -webkit-appearance: none;
+                        -moz-appearance: none;
+                        appearance: none;
+                        &::after {
+                            content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+                            position: absolute;
+                            top: 0;
+                            right: 0;
+                            bottom: 0;
+                            width: 2rem;
+                            height: 2rem;
+                            pointer-events: none;
+                        }
+
+                        option {
+                            font-size: 1.5rem;
+                            font-weight: 400;
+                            margin-bottom: 1rem;
+                            padding: 0.5rem;
+                            border-radius: 0.5rem;
+                            border: 1px solid rgb(255, 255, 255);
+                            background: rgb(33, 33, 33);
+                            color: rgb(255, 255, 255);
+                            transition: border 0.15s ease;
+
+                            &:focus {
+                                outline: none;
+                            }
+
+                            &:hover {
+                                border: 1px solid rgb(0, 0, 255);
+                            }
+                        }
+                    }
+
+                    button {
+                        font-size: 1.5rem;
+                        font-weight: 400;
+                        margin-bottom: 1rem;
+                        padding: 0.5rem;
+                        border-radius: 0.5rem;
+                        border: 1px solid rgb(255, 255, 255);
+                        background: rgb(33, 33, 33);
+                        color: rgb(255, 255, 255);
+                        transition: border 0.15s ease;
+                        cursor: pointer;
+
+                        &:focus {
+                            outline: none;
+                        }
+
+                        &:hover {
+                            border: 1px solid rgb(0, 0, 255);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

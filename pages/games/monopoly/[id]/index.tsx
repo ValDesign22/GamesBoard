@@ -1,17 +1,12 @@
+import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import {useEffect, useState} from "react";
+import { MonopolyPlayer } from "../../../../util/types";
+import axios from "axios";
 
-export default function Room() {
+export default function Room(props: {id: string}) {
     const [rolling, setRolling] = useState(false);
-
-    const [fiveHundreds, setFiveHundreds] = useState(2);
-    const [hundreds, setHundreds] = useState(4);
-    const [fifties, setFifties] = useState(1);
-    const [twenties, setTwenties] = useState(1);
-    const [tens, setTens] = useState(2);
-    const [fives, setFives] = useState(1);
-    const [ones, setOnes] = useState(5);
 
     const cases = [
         {
@@ -378,105 +373,107 @@ export default function Room() {
 
     const chancesCards: {
         title: string;
-        action: (player: any) => void;
+        action: (player: MonopolyPlayer) => void;
         canBeKept?: boolean;
     }[]
         = [
         {
             title: "Rendez-vous à la Rue de la Paix",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.position = 39;
             }
         },
         {
             title: "Avancer jusqu'à la case départ",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.position = 0;
             }
         },
         {
             title: "Rendez-vous au Boulevard Henri-Martin. Si vous passez par la case départ, recevez 200M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.position = 24;
             }
         },
         {
             title: "Avancez au Boulevard de la Villette. Si vous passez par la case départ, recevez 200M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.position = 11;
             }
         },
         {
             title: "Vous êtes imposé pour les réparations de voirie à raison de 40M par maison et 115M par hôtel.",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money -= 40;
             }
         },
         {
-            title: "Avancez jusqu’à la Gare de Lyon. Si vous passez par la case départ, recevez 200M",
-            action: (player: any) => {
+            title: "Avancez jusqu'à la Gare de Lyon. Si vous passez par la case départ, recevez 200M",
+            action: (player: MonopolyPlayer) => {
                 player.position = 15;
             }
         },
         {
             title: "Vous avez gagné le prix de mots croisés. Recevez 100M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money += 100;
             }
         },
         {
             title: "La banque vous verse un dividende de 50M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money += 50;
             }
         },
         {
-            title: "Vous êtes libéré de prison. Cette carte peut être conservée jusqu’à ce qu’elle soit utilisée ou vendue.",
-            action: (player: any) => {
-                player.inPrison = false;
+            title: "Vous êtes libéré de prison. Cette carte peut être conservée jusq'à ce qu'elle soit utilisée ou vendue.",
+            action: (player: MonopolyPlayer) => {
+                player.inJail = false;
+                player.jailTurns = 0;
             },
             canBeKept: true
         },
         {
             title: "Reculez de trois cases",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.position -= 3;
             }
         },
         {
             title: "Aller en prison. Rendez-vous directement en prison. Ne franchissez pas par la case départ, ne touchez pas 200M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.position = 10;
-                player.inPrison = true;
+                player.inJail = true;
+                player.jailTurns = 0;
             }
         },
         {
             title: "Faites des réparations dans toutes vos maisons. Versez pour chaque maison 25M et pour chaque hôtel 100M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money -= 25;
             }
         },
         {
             title: "Amende pour excès de vitesse 15M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money -= 15;
             }
         },
         {
             title: "Payer pour frais de scolarité 150M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money -= 150;
             }
         },
         {
             title: "Amende pour ivresse 20M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money -= 20;
             }
         },
         {
             title: "Votre immeuble et votre prêt rapportent. Vous devez toucher 150M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money += 150;
             }
         }
@@ -484,98 +481,99 @@ export default function Room() {
 
     const communityChestCards: {
         title: string;
-        action: (player: any) => void;
+        action: (player: MonopolyPlayer) => void;
         canBeKept?: boolean;
     }[]
         = [
         {
             title: "Placez-vous sur la case départ. (Collectez 200M)",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.position = 0;
             }
         },
         {
             title: "Erreur de la banque en votre faveur. Recevez 200M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money += 200;
             }
         },
         {
             title: "Payez la note du médecin 50M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money -= 50;
             }
         },
         {
             title: "La vente de votre stock vous rapporte 50M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money += 50;
             }
         },
         {
-            title: "Vous êtes libéré de prison. Cette carte peut être conservée jusqu’à ce qu’elle soit utilisée ou vendue.",
-            action: (player: any) => {
-                player.inPrison = false;
+            title: "Vous êtes libéré de prison. Cette carte peut être conservée jusqu'à ce qu'elle soit utilisée ou vendue.",
+            action: (player: MonopolyPlayer) => {
+                player.inJail = false;
+                player.jailTurns = 0;
             },
             canBeKept: true
         },
         {
             title: "Retournez à Belleville",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.position = 1;
             }
         },
         {
             title: "Recevez votre revenu annuel 100M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money += 100;
             }
         },
         {
-            title: "C’est votre anniversaire. Chaque joueur doit vous donner 10M",
-            action: (player: any) => {
+            title: "C'est votre anniversaire. Chaque joueur doit vous donner 10M",
+            action: (player: MonopolyPlayer) => {
                 player.money += 10;
             }
         },
         {
             title: "Les contributions vous remboursent la somme de 20M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money += 20;
             }
         },
         {
-            title: "Recevez votre intérêt sur l’emprunt à 7% 25M",
-            action: (player: any) => {
+            title: "Recevez votre intérêt sur l'emprunt à 7% 25M",
+            action: (player: MonopolyPlayer) => {
                 player.money += 25;
             }
         },
         {
-            title: "Payez votre Police d’Assurance 50M",
-            action: (player: any) => {
+            title: "Payez votre Police d'Assurance 50M",
+            action: (player: MonopolyPlayer) => {
                 player.money -= 50;
             }
         },
         {
             title: "Payez une amende de 10M ou bien tirez une carte Chance",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money -= 10;
             }
         },
         {
             title: "Rendez-vous à la gare la plus proche. Si vous passez par la case départ, recevez 200M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.position = 5;
             }
         },
         {
             title: "Vous avez gagné le deuxième Prix de Beauté. Recevez 10M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money += 10;
             }
         },
         {
             title: "Vous héritez 100M",
-            action: (player: any) => {
+            action: (player: MonopolyPlayer) => {
                 player.money += 100;
             }
         }
@@ -750,7 +748,7 @@ export default function Room() {
                     <div className="communityChestCard">
                         <div className="inner">
                             <div className="front">
-                                <img src={"/monopoly/community_chest_back.png"}alt="Community Chest" />
+                                <img src={"/monopoly/community_chest_back.png"} alt="Community Chest" />
                             </div>
                             <div className="back">
                                 goodbye
@@ -788,4 +786,18 @@ export default function Room() {
             </main>
         </>
     )
+}
+
+export const getServerSideProps: GetServerSideProps<{ id: string }> = async (context) => {
+    // verify if the room exists
+    const { id } = context.params as { id: string }
+    const room = await axios.get(`/api/games/${id}`);
+
+    if (room.status !== 200) return { notFound: true }
+
+    return {
+        props: {
+            id
+        }
+    }
 }
