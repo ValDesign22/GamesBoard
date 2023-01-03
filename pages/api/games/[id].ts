@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const roomGet = await rooms.findOne({ id: id });
 
-        if (roomGet) return res.status(404).json({ message: "Room not found" });
+        if (!roomGet) return res.status(201).json({ message: "Room not found" });
         res.status(200).json(roomGet);
     } else if (req.method === "POST") {
         const { id } = req.query;

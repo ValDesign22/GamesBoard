@@ -2,10 +2,10 @@ import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import {useEffect, useState} from "react";
-import { MonopolyPlayer } from "../../../../util/types";
+import {Game, MonopolyPlayer} from "../../../../util/types";
 import axios from "axios";
 
-export default function Room(props: {id: string}) {
+export default function Room(props: {game: Game}) {
     const [rolling, setRolling] = useState(false);
 
     const cases = [
@@ -788,16 +788,20 @@ export default function Room(props: {id: string}) {
     )
 }
 
-export const getServerSideProps: GetServerSideProps<{ id: string }> = async (context) => {
-    // verify if the room exists
+export const getServerSideProps: GetServerSideProps<{ game: Game }> = async (context) => {
     const { id } = context.params as { id: string }
-    const room = await axios.get(`/api/games/${id}`);
+    const room = await axios.get(`${process.env.APP_URL}/api/games/${id}`);
 
-    if (room.status !== 200) return { notFound: true }
+    if (room.status !== 200) return {
+        redirect: {
+            destination: "/games/monopoly",
+            permanent: false
+        }
+    }
 
     return {
         props: {
-            id
+            game: room.data
         }
     }
 }

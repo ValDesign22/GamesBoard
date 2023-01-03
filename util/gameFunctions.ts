@@ -1,5 +1,9 @@
 import { MonopolyHouse, MonopolyPlayer } from "./types";
 
+export function generateGameId() {
+    return Math.floor(Math.random() * 100000000000000000);
+}
+
 export function moveMonopolyPlayer(player: MonopolyPlayer, cases: number) {
     player.position += cases;
     if (player.position > 39) player.position -= 40;

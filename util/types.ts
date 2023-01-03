@@ -18,3 +18,13 @@ export interface MonopolyHouse {
     hotel: boolean;
     name: string;
 }
+
+export interface Game {
+    id: string;
+    name: string;
+    owner: string;
+    users: string[];
+    private: boolean;
+    password: string;
+    roomType: string;
+}

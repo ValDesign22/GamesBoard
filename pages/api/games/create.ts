@@ -5,15 +5,15 @@ import mongoConnect from "../../../mongodb/mongoConnect";
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     await mongoConnect();
 
-    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-    
-    const { id, name, owner, users, prived, password, roomType } = req.body;
+    if (req.method !== "POST") return res.status(405).json({error: "Method not allowed"});
 
-    if (!req.headers.authorization) return res.status(401).json({ error: "You are not authenticated" });
+    const {id, name, owner, users, prived, password, roomType} = req.body;
 
-    if (req.headers.authorization !== owner) return res.status(401).json({ error: "You are not the owner of this room" });
+    if (!req.headers.authorization) return res.status(401).json({error: "You are not authenticated"});
 
-    new rooms({
+    if (req.headers.authorization !== owner) return res.status(401).json({error: "You are not the owner of this room"});
+
+    const room = await rooms.create({
         id,
         name,
         owner,
@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         private: prived,
         password,
         roomType
-    }).save();
+    });
 
-    res.status(200).json({ message: "Room created" });
+    res.status(200).json({room});
 }
