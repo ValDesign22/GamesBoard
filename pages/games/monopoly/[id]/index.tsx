@@ -2,7 +2,7 @@ import Head from "next/head";
 import Image from "next/image";
 import {useEffect, useState} from "react";
 
-export default function Monopoly() {
+export default function Room() {
     const [rolling, setRolling] = useState(false);
 
     const [fiveHundreds, setFiveHundreds] = useState(2);
@@ -739,7 +739,7 @@ export default function Monopoly() {
                     <div className="chanceCard">
                         <div className="inner">
                             <div className="front">
-                                hello
+                                <img src={"/monopoly/chance_card_back.png"} alt="Chance" />
                             </div>
                             <div className="back">
                                 goodbye
@@ -750,7 +750,7 @@ export default function Monopoly() {
                     <div className="communityChestCard">
                         <div className="inner">
                             <div className="front">
-                                hello
+                                <img src={"/monopoly/community_chest_back.png"}alt="Community Chest" />
                             </div>
                             <div className="back">
                                 goodbye

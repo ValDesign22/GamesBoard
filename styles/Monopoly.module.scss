@@ -50,12 +50,23 @@
                 transform-style: preserve-3d;
 
                 .front {
-                    background-color: #fff;
+                    background-color: orange;
+                    padding: 1rem;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+
+                    img {
+                        height: 50%;
+                        width: 100%;
+                        object-fit: contain;
+                        rotate: -90deg;
+                    }
                 }
 
                 .back {
-                    background-color: #333;
-                    color: #fff;
+                    background-color: #fff;
+                    color: #333;
                     transform: rotateY(180deg);
                 }
 
@@ -92,12 +103,23 @@
                 transform-style: preserve-3d;
 
                 .front {
-                    background-color: #fff;
+                    background-color: blue;
+                    padding: 1rem;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+
+                    img {
+                        height: 100%;
+                        width: 100%;
+                        object-fit: contain;
+                        rotate: -90deg;
+                    }
                 }
 
                 .back {
-                    background-color: #333;
-                    color: #fff;
+                    background-color: #fff;
+                    color: #333;
                     transform: rotateY(180deg);
                 }
 
@@ -285,9 +307,6 @@
 @keyframes roll {
     0% {
         transform: translate(-50%, -50%) rotate(0deg);
-    }
-    25% {
-        transform: translate(-50%, -50%) rotate(-90deg);
     }
     100% {
         transform: translate(-50%, -50%) rotate(360deg);
