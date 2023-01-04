@@ -1,7 +1,9 @@
 import Head from "next/head";
 import Link from "next/link";
+import {GetServerSideProps} from "next";
+import {parseUser} from "../../util/authFunctions";
 
-export default function Games() {
+export default function Games(props: { user: { username: string, id: string } }) {
     return (
         <>
             <Head>
@@ -23,4 +25,21 @@ export default function Games() {
             </main>
         </>
     )
+}
+
+export const getServerSideProps: GetServerSideProps<{ user: { username: string, id: string } }> = async (context) => {
+    const user = parseUser(context);
+
+    if (!user) return {
+        redirect: {
+            destination: "/login",
+            permanent: false
+        }
+    }
+
+    return {
+        props: {
+            user
+        }
+    }
 }

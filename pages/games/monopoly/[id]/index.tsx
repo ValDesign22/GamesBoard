@@ -1,12 +1,20 @@
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Image from "next/image";
-import {useEffect, useState} from "react";
-import {Game, MonopolyPlayer} from "../../../../util/types";
+import {FormEvent, useEffect, useRef, useState} from "react";
+import {MonopolyGame, MonopolyPlayer} from "../../../../util/types";
 import axios from "axios";
+import {parseUser} from "../../../../util/authFunctions";
+import SocketIOClient from "socket.io-client";
 
-export default function Room(props: {game: Game}) {
+export default function Room(props: {game: MonopolyGame, user: {username: string, id: string}}) {
     const [rolling, setRolling] = useState(false);
+    const [connected, setConnected] = useState(false);
+    const [messages, setMessages] = useState<any[]>([]);
+    const [message, setMessage] = useState("");
+    const [started, setStarted] = useState(props.game.started);
+
+    const messageRef = useRef<HTMLTextAreaElement>(null);
 
     const cases = [
         {
@@ -373,7 +381,7 @@ export default function Room(props: {game: Game}) {
 
     const chancesCards: {
         title: string;
-        action: (player: MonopolyPlayer) => void;
+        action: (player: MonopolyPlayer, players: MonopolyPlayer[]) => void;
         canBeKept?: boolean;
     }[]
         = [
@@ -392,24 +400,38 @@ export default function Room(props: {game: Game}) {
         {
             title: "Rendez-vous au Boulevard Henri-Martin. Si vous passez par la case départ, recevez 200M",
             action: (player: MonopolyPlayer) => {
+                if (player.position > 24) player.money += 200;
+
                 player.position = 24;
             }
         },
         {
             title: "Avancez au Boulevard de la Villette. Si vous passez par la case départ, recevez 200M",
             action: (player: MonopolyPlayer) => {
+                if (player.position > 11) player.money += 200;
+
                 player.position = 11;
             }
         },
         {
             title: "Vous êtes imposé pour les réparations de voirie à raison de 40M par maison et 115M par hôtel.",
             action: (player: MonopolyPlayer) => {
-                player.money -= 40;
+                let playerHouses = 0;
+                let playerHotels = 0;
+
+                for (let i = 0; i < player.houses.length; i++) {
+                    if (player.houses[i].houses > 0) playerHouses += player.houses[i].houses;
+                    if (player.houses[i].hotel) playerHotels++;
+                }
+
+                player.money -= (playerHouses * 40) + (playerHotels * 115);
             }
         },
         {
             title: "Avancez jusqu'à la Gare de Lyon. Si vous passez par la case départ, recevez 200M",
             action: (player: MonopolyPlayer) => {
+                if (player.position > 15) player.money += 200;
+
                 player.position = 15;
             }
         },
@@ -450,7 +472,15 @@ export default function Room(props: {game: Game}) {
         {
             title: "Faites des réparations dans toutes vos maisons. Versez pour chaque maison 25M et pour chaque hôtel 100M",
             action: (player: MonopolyPlayer) => {
-                player.money -= 25;
+                let playerHouses = 0;
+                let playerHotels = 0;
+
+                for (let i = 0; i < player.houses.length; i++) {
+                    if (player.houses[i].houses > 0) playerHouses += player.houses[i].houses;
+                    if (player.houses[i].hotel) playerHotels++;
+                }
+
+                player.money -= (playerHouses * 25) + (playerHotels * 100);
             }
         },
         {
@@ -481,7 +511,7 @@ export default function Room(props: {game: Game}) {
 
     const communityChestCards: {
         title: string;
-        action: (player: MonopolyPlayer) => void;
+        action: (player: MonopolyPlayer, players: MonopolyPlayer[]) => void;
         canBeKept?: boolean;
     }[]
         = [
@@ -489,6 +519,7 @@ export default function Room(props: {game: Game}) {
             title: "Placez-vous sur la case départ. (Collectez 200M)",
             action: (player: MonopolyPlayer) => {
                 player.position = 0;
+                player.money += 200;
             }
         },
         {
@@ -531,8 +562,13 @@ export default function Room(props: {game: Game}) {
         },
         {
             title: "C'est votre anniversaire. Chaque joueur doit vous donner 10M",
-            action: (player: MonopolyPlayer) => {
-                player.money += 10;
+            action: (player: MonopolyPlayer, players: MonopolyPlayer[]) => {
+                for (let i = 0; i < players.length; i++) {
+                    if (players[i].id !== player.id) {
+                        players[i].money -= 10;
+                        player.money += 10;
+                    }
+                }
             }
         },
         {
@@ -562,7 +598,16 @@ export default function Room(props: {game: Game}) {
         {
             title: "Rendez-vous à la gare la plus proche. Si vous passez par la case départ, recevez 200M",
             action: (player: MonopolyPlayer) => {
-                player.position = 5;
+                const gares = [5, 15, 25, 35];
+                const newPoses = [];
+
+                for (let i = 0; i < gares.length; i++) newPoses.push(Math.min(Math.abs(player.position - gares[i]), Math.abs(player.position - (gares[i] + 40))));
+
+                const newPlayerPos = gares[newPoses.indexOf(Math.min(...newPoses))];
+
+                if (newPlayerPos < player.position) player.money += 200;
+
+                player.position = newPlayerPos;
             }
         },
         {
@@ -578,6 +623,146 @@ export default function Room(props: {game: Game}) {
             }
         }
     ];
+
+    const sendMessage = () => {
+        const gameId = props.game.id;
+        const playerName = props.user?.username || "Anonyme";
+
+        axios.post("/api/games/monopoly/chat", {
+            gameId,
+            message,
+            playerName
+        }).then((res) => {
+            setMessage("");
+            messageRef.current?.focus();
+        });
+    }
+
+    const drawDots = (dotsGroup: HTMLCollectionOf<HTMLDivElement>, dots: number) => {
+        if (dots === 1) {
+            dotsGroup[0].children[0].className = "dot center"
+            dotsGroup[0].children[1].className = "dot";
+            dotsGroup[0].children[2].className = "dot";
+            dotsGroup[0].children[3].className = "dot";
+            dotsGroup[0].children[4].className = "dot";
+            dotsGroup[0].children[5].className = "dot";
+        }
+        else if (dots === 2) {
+            dotsGroup[0].children[0].className = "dot top-left";
+            dotsGroup[0].children[1].className = "dot";
+            dotsGroup[0].children[2].className = "dot";
+            dotsGroup[0].children[3].className = "dot";
+            dotsGroup[0].children[4].className = "dot";
+            dotsGroup[0].children[5].className = "dot bottom-right";
+        }
+        else if (dots === 3) {
+            dotsGroup[0].children[0].className = "dot top-left";
+            dotsGroup[0].children[1].className = "dot";
+            dotsGroup[0].children[2].className = "dot center";
+            dotsGroup[0].children[3].className = "dot";
+            dotsGroup[0].children[4].className = "dot";
+            dotsGroup[0].children[5].className = "dot bottom-right";
+        }
+        else if (dots === 4) {
+            dotsGroup[0].children[0].className = "dot top-left";
+            dotsGroup[0].children[1].className = "dot";
+            dotsGroup[0].children[2].className = "dot top-right";
+            dotsGroup[0].children[3].className = "dot bottom-left";
+            dotsGroup[0].children[4].className = "dot";
+            dotsGroup[0].children[5].className = "dot bottom-right";
+        }
+        else if (dots === 5) {
+            dotsGroup[0].children[0].className = "dot top-left";
+            dotsGroup[0].children[1].className = "dot";
+            dotsGroup[0].children[2].className = "dot top-right";
+            dotsGroup[0].children[3].className = "dot center";
+            dotsGroup[0].children[4].className = "dot bottom-left";
+            dotsGroup[0].children[5].className = "dot bottom-right";
+        }
+        else if (dots === 6) {
+            dotsGroup[0].children[0].className = "dot top-left";
+            dotsGroup[0].children[1].className = "dot top";
+            dotsGroup[0].children[2].className = "dot top-right";
+            dotsGroup[0].children[3].className = "dot bottom-left";
+            dotsGroup[0].children[4].className = "dot bottom";
+            dotsGroup[0].children[5].className = "dot bottom-right";
+        }
+    }
+
+    const diceRoll = () => {
+        if (rolling) return;
+
+        setRolling(true);
+
+        const dice1 = document.getElementById("dice1") as HTMLDivElement;
+        const dotsGroup1 = dice1.getElementsByClassName("dots-group") as HTMLCollectionOf<HTMLDivElement>;
+        const dice2 = document.getElementById("dice2") as HTMLDivElement;
+        const dotsGroup2 = dice2.getElementsByClassName("dots-group") as HTMLCollectionOf<HTMLDivElement>;
+
+        const dice1Num = Math.floor(Math.random() * 6) + 1;
+        const dice2Num = Math.floor(Math.random() * 6) + 1;
+
+        dice1.classList.add("roll");
+        dice2.classList.add("roll");
+
+        setTimeout(async () => {
+            dice1.classList.remove("roll")
+            dice2.classList.remove("roll")
+
+            drawDots(dotsGroup1, dice1Num);
+            drawDots(dotsGroup2, dice2Num);
+
+            await axios.post("/api/games/monopoly/roll", {
+                gameId: props.game.id,
+                num: dice1Num + dice2Num,
+                user: {
+                    id: props.user?.id,
+                    username: props.user?.username
+                }
+            });
+        }, 1000);
+
+        setRolling(false);
+    }
+
+    useEffect((): any => {
+        const socket = SocketIOClient(process.env.APP_URL!, {
+            path: "/api/socket"
+        });
+
+        socket.on("connect", async () => {
+            console.log("Connected to socket");
+            setConnected(true);
+
+            await axios.post("/api/games/monopoly/join", {
+                gameId: props.game.id,
+                username: props.user?.username
+            });
+        });
+
+        socket.on("monopoly-join", (data: { gameId: string, username: string }) => {
+            if (data.gameId === props.game.id) {
+                messages.push({ username: "Monopoly", message: `${data.username} a rejoint la partie` });
+                setMessages([...messages]);
+            }
+        });
+
+        socket.on("monopoly-chat", (data: { gameId: string; message: string; playerName: string }) => {
+            if (data.gameId === props.game.id) {
+                messages?.push({ username: data.playerName, message: data.message });
+                setMessages([...messages!]);
+            }
+        });
+
+        socket.on("monopoly-roll", (data: { gameId: string; num: number; user: { id: string; username: string } }) => {
+            if (data.gameId === props.game.id) {
+                messages?.push({ username: data.user.username, message: `a fait un ${data.num}` });
+                setMessages([...messages!]);
+            }
+        });
+
+        if (socket) return () => socket.disconnect();
+    })
 
     useEffect(() => {
         for (let i = 0; i < cases.length; i++) {
@@ -601,27 +786,16 @@ export default function Room(props: {game: Game}) {
             monopolyCase.style.width = `${caseWidth}px`;
             monopolyCase.style.height = `${caseHeight}px`;
 
-            if (cases[i].title.startsWith("Depart")) {
-                monopolyCase.className = "depart";
-            } else if (cases[i].title.startsWith("Caisse")) {
-                monopolyCase.className = "caisse";
-            } else if (cases[i].title.startsWith("Impot")) {
-                monopolyCase.className = "impot";
-            } else if (cases[i].title.startsWith("Gare")) {
-                monopolyCase.className = "gare";
-            } else if (cases[i].title.startsWith("Chance")) {
-                monopolyCase.className = "chance";
-            } else if (cases[i].title.startsWith("Prison")) {
-                monopolyCase.className = "prison";
-            } else if (cases[i].title.startsWith("Compagnie")) {
-                monopolyCase.className = "compagnie";
-            } else if (cases[i].title.startsWith("Parc")) {
-                monopolyCase.className = "parc";
-            } else if (cases[i].title.startsWith("Allez")) {
-                monopolyCase.className = "allez";
-            } else if (cases[i].title.startsWith("Taxe")) {
-                monopolyCase.className = "taxe";
-            }
+            if (cases[i].title.startsWith("Depart")) monopolyCase.className = "depart";
+            else if (cases[i].title.startsWith("Caisse")) monopolyCase.className = "caisse";
+            else if (cases[i].title.startsWith("Impot")) monopolyCase.className = "impot";
+            else if (cases[i].title.startsWith("Gare")) monopolyCase.className = "gare";
+            else if (cases[i].title.startsWith("Chance")) monopolyCase.className = "chance";
+            else if (cases[i].title.startsWith("Prison")) monopolyCase.className = "prison";
+            else if (cases[i].title.startsWith("Compagnie")) monopolyCase.className = "compagnie";
+            else if (cases[i].title.startsWith("Parc")) monopolyCase.className = "parc";
+            else if (cases[i].title.startsWith("Allez")) monopolyCase.className = "allez";
+            else if (cases[i].title.startsWith("Taxe")) monopolyCase.className = "taxe";
 
             monopolyCase.classList.add("case");
 
@@ -633,93 +807,11 @@ export default function Room(props: {game: Game}) {
             const target = e.target as HTMLSpanElement;
             const caseId = target.id;
             const caseIndex = parseInt(caseId.replace("case-[", "").replace("]", ""));
-            console.log(caseIndex);
+            console.log(cases[caseIndex]);
         }
 
         const monopolyCases = document.getElementsByClassName("case") as HTMLCollectionOf<HTMLSpanElement>;
         for (let i = 0; i < monopolyCases.length; i++) monopolyCases[i].addEventListener("click", handleCaseClick);
-
-        const rollButton = document.getElementById("roll") as HTMLButtonElement;
-
-        const dice1 = document.getElementById("dice1") as HTMLDivElement;
-        const dotsGroup1 = dice1.getElementsByClassName("dots-group") as HTMLCollectionOf<HTMLDivElement>;
-        const dice2 = document.getElementById("dice2") as HTMLDivElement;
-        const dotsGroup2 = dice2.getElementsByClassName("dots-group") as HTMLCollectionOf<HTMLDivElement>;
-
-        const drawDots = (dotsGroup: HTMLCollectionOf<HTMLDivElement>, dots: number) => {
-            if (dots === 1) {
-                dotsGroup[0].children[0].className = "dot center"
-                dotsGroup[0].children[1].className = "dot";
-                dotsGroup[0].children[2].className = "dot";
-                dotsGroup[0].children[3].className = "dot";
-                dotsGroup[0].children[4].className = "dot";
-                dotsGroup[0].children[5].className = "dot";
-            }
-            else if (dots === 2) {
-                dotsGroup[0].children[0].className = "dot top-left";
-                dotsGroup[0].children[1].className = "dot";
-                dotsGroup[0].children[2].className = "dot";
-                dotsGroup[0].children[3].className = "dot";
-                dotsGroup[0].children[4].className = "dot";
-                dotsGroup[0].children[5].className = "dot bottom-right";
-            }
-            else if (dots === 3) {
-                dotsGroup[0].children[0].className = "dot top-left";
-                dotsGroup[0].children[1].className = "dot";
-                dotsGroup[0].children[2].className = "dot center";
-                dotsGroup[0].children[3].className = "dot";
-                dotsGroup[0].children[4].className = "dot";
-                dotsGroup[0].children[5].className = "dot bottom-right";
-            }
-            else if (dots === 4) {
-                dotsGroup[0].children[0].className = "dot top-left";
-                dotsGroup[0].children[1].className = "dot";
-                dotsGroup[0].children[2].className = "dot top-right";
-                dotsGroup[0].children[3].className = "dot bottom-left";
-                dotsGroup[0].children[4].className = "dot";
-                dotsGroup[0].children[5].className = "dot bottom-right";
-            }
-            else if (dots === 5) {
-                dotsGroup[0].children[0].className = "dot top-left";
-                dotsGroup[0].children[1].className = "dot";
-                dotsGroup[0].children[2].className = "dot top-right";
-                dotsGroup[0].children[3].className = "dot center";
-                dotsGroup[0].children[4].className = "dot bottom-left";
-                dotsGroup[0].children[5].className = "dot bottom-right";
-            }
-            else if (dots === 6) {
-                dotsGroup[0].children[0].className = "dot top-left";
-                dotsGroup[0].children[1].className = "dot top";
-                dotsGroup[0].children[2].className = "dot top-right";
-                dotsGroup[0].children[3].className = "dot bottom-left";
-                dotsGroup[0].children[4].className = "dot bottom";
-                dotsGroup[0].children[5].className = "dot bottom-right";
-            }
-        }
-
-        const diceRoll = () => {
-            setRolling(true);
-
-            const dice1Num = Math.floor(Math.random() * 6) + 1;
-            const dice2Num = Math.floor(Math.random() * 6) + 1;
-
-            dice1.classList.add("roll");
-            dice2.classList.add("roll");
-
-            setTimeout(() => {
-                dice1.classList.remove("roll")
-                dice2.classList.remove("roll")
-
-                drawDots(dotsGroup1, dice1Num);
-                drawDots(dotsGroup2, dice2Num);
-
-                setRolling(false);
-            }, 1000);
-        }
-
-        rollButton.addEventListener("click", () => {
-            if (!rolling) diceRoll();
-        });
     });
 
     return (
@@ -731,6 +823,10 @@ export default function Room(props: {game: Game}) {
                 <link rel="icon" href="/favicon.ico" />
             </Head>
             <main className="monopoly">
+                <div className="argent">
+                    <h2>Ton argent</h2>
+                    <p>1500M</p>
+                </div>
                 <div className="board" id="board">
                     <Image src={"/monopoly/plateau.jpg"} alt="Monopoly" width={1241} height={1241} />
 
@@ -757,30 +853,45 @@ export default function Room(props: {game: Game}) {
                     </div>
 
                     <div className="dice">
-                        <button className="roll-btn" id="roll">Lancer</button>
+                        <button className="roll-btn" id="roll" onClick={diceRoll}>Lancer</button>
 
                         <div className="dice-container">
                             <div id="dice1">
                                 <div className="dots-group">
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
+                                    <div className="dot top-left"></div>
+                                    <div className="dot top"></div>
+                                    <div className="dot top-right"></div>
+                                    <div className="dot bottom-left"></div>
+                                    <div className="dot bottom"></div>
+                                    <div className="dot bottom-right"></div>
                                 </div>
                             </div>
                             <div id="dice2">
                                 <div className="dots-group">
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
-                                    <div className="dot center"></div>
+                                    <div className="dot top-left"></div>
+                                    <div className="dot top"></div>
+                                    <div className="dot top-right"></div>
+                                    <div className="dot bottom-left"></div>
+                                    <div className="dot bottom"></div>
+                                    <div className="dot bottom-right"></div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+                <div className="chat">
+                    <h2>Chat</h2>
+                    <div className="messages">
+                        {messages?.map((message: any, index) => (
+                            <div key={index} className="message">
+                                <span className="author">{message.username === props.user.username ? "Moi" : message.username}</span>
+                                <span className="content">{message.message}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="form">
+                        <textarea placeholder="Tapez un message" id="message" ref={messageRef} disabled={!connected} onChange={(e) => setMessage(e.target.value)} value={message} />
+                        <button onClick={sendMessage} disabled={!connected}>Envoyer</button>
                     </div>
                 </div>
             </main>
@@ -788,9 +899,13 @@ export default function Room(props: {game: Game}) {
     )
 }
 
-export const getServerSideProps: GetServerSideProps<{ game: Game }> = async (context) => {
+export const getServerSideProps: GetServerSideProps<{ game: MonopolyGame, user: { id: string, username: string } }> = async (context) => {
     const { id } = context.params as { id: string }
-    const room = await axios.get(`${process.env.APP_URL}/api/games/${id}`);
+    const room = await axios.get(`${process.env.APP_URL}/api/games/monopoly/game`, {
+        params: {
+            gameId: id
+        }
+    });
 
     if (room.status !== 200) return {
         redirect: {
@@ -799,9 +914,19 @@ export const getServerSideProps: GetServerSideProps<{ game: Game }> = async (con
         }
     }
 
+    const user = parseUser(context);
+
+    if (!user) return {
+        redirect: {
+            destination: "/login",
+            permanent: false
+        }
+    }
+
     return {
         props: {
-            game: room.data
+            game: room.data,
+            user
         }
     }
 }

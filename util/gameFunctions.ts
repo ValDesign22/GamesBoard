@@ -1,12 +1,19 @@
 import { MonopolyHouse, MonopolyPlayer } from "./types";
 
 export function generateGameId() {
-    return Math.floor(Math.random() * 100000000000000000);
+    const numbers = '0123456789';
+
+    let code = '';
+
+    for (let i = 0; i < 6; i++)  code += numbers[Math.floor(Math.random() * numbers.length)];
+
+    return code;
 }
 
-export function moveMonopolyPlayer(player: MonopolyPlayer, cases: number) {
-    player.position += cases;
-    if (player.position > 39) player.position -= 40;
+export function moveMonopolyPlayer(position: number, cases: number) {
+    position += cases;
+    if (position > 39) position -= 40;
+    return position;
 }
 
 export function setMonopolyPlayerMoney(player: MonopolyPlayer, money: number) {

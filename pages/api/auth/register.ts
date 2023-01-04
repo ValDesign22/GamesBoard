@@ -1,10 +1,11 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest } from 'next';
 import nodemailer from 'nodemailer';
 import mongoConnect from "../../../mongodb/mongoConnect";
 import users from "../../../mongodb/models/users";
 import {encodePassword, generateConfirmCode, generateUniqueID} from "../../../util/authFunctions";
+import {NextSocketApiResponse} from "../../../util/types";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextSocketApiResponse) {
     await mongoConnect();
 
     if (req.method !== 'POST')  return res.status(400).json({ message: 'Only POST requests are allowed' });

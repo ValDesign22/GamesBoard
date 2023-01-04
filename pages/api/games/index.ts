@@ -1,8 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest } from 'next';
 import mongoConnect from "../../../mongodb/mongoConnect";
 import rooms from "../../../mongodb/models/rooms";
+import {NextSocketApiResponse} from "../../../util/types";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextSocketApiResponse) {
     await mongoConnect();
 
     if (req.method !== "GET") return res.status(405).json({error: "Method not allowed"});
