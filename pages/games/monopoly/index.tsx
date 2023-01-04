@@ -80,7 +80,9 @@ export default function Monopoly(props: { games: Game[], user: { username: strin
                         </form>
                         <h2>Ou</h2>
                         <div className="roomList">
-                            {props.games.map((game) => {
+                            {props.games.filter((game) => {
+                                if (game.roomType === "monopoly") return game;
+                            }).map((game) => {
                                 if (game.private) return null;
                                 return (
                                     <div className="room" key={game.id}>

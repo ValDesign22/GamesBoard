@@ -13,6 +13,8 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
     const [messages, setMessages] = useState<any[]>([]);
     const [message, setMessage] = useState("");
     const [started, setStarted] = useState(props.game.started);
+    const [players, setPlayers] = useState<MonopolyPlayer[]>(props.game.players);
+    const [player, setPlayer] = useState<MonopolyPlayer | null>(null);
 
     const messageRef = useRef<HTMLTextAreaElement>(null);
 
@@ -564,7 +566,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             title: "C'est votre anniversaire. Chaque joueur doit vous donner 10M",
             action: (player: MonopolyPlayer, players: MonopolyPlayer[]) => {
                 for (let i = 0; i < players.length; i++) {
-                    if (players[i].id !== player.id) {
+                    if (players[i].name !== player.name) {
                         players[i].money -= 10;
                         player.money += 10;
                     }
@@ -635,6 +637,16 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         }).then((res) => {
             setMessage("");
             messageRef.current?.focus();
+        });
+    }
+
+    const startGame = () => {
+        if (players.length < 2) return;
+
+        axios.post("/api/games/monopoly/start", {
+            gameId: props.game.id
+        }).then((res) => {
+            setStarted(res.data.started);
         });
     }
 
@@ -725,6 +737,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         setRolling(false);
     }
 
+    // Websocket UseEffect
     useEffect((): any => {
         const socket = SocketIOClient(process.env.APP_URL!, {
             path: "/api/socket"
@@ -740,9 +753,26 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             });
         });
 
-        socket.on("monopoly-join", (data: { gameId: string, username: string }) => {
+        socket.on("monopoly-join", async (data: { gameId: string, username: string }) => {
             if (data.gameId === props.game.id) {
                 messages.push({ username: "Monopoly", message: `${data.username} a rejoint la partie` });
+                setMessages([...messages]);
+
+                const gameData = await axios.get("/api/games/monopoly/game", {
+                    params: {
+                        gameId: props.game.id
+                    }
+                });
+
+                setStarted(gameData.data.started);
+                setPlayers(gameData.data.players);
+            }
+        });
+
+        socket.on("monopoly-start", (data: { gameId: string }) => {
+            if (data.gameId === props.game.id) {
+                setStarted(true);
+                messages.push({ username: "Monopoly", message: `La partie a commencé` });
                 setMessages([...messages]);
             }
         });
@@ -764,6 +794,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         if (socket) return () => socket.disconnect();
     })
 
+    // Game UseEffect
     useEffect(() => {
         for (let i = 0; i < cases.length; i++) {
             const caseWidth = cases[i].width;
@@ -823,9 +854,17 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 <link rel="icon" href="/favicon.ico" />
             </Head>
             <main className="monopoly">
+                {!started && (
+                    <div className="start">
+                        <h2>Monopoly</h2>
+                        <p>Le jeu de société le plus connu au monde</p>
+                        <span>{players?.length} / 8</span>
+                        <button onClick={startGame} disabled={players?.length < 2}>Commencer la partie</button>
+                    </div>
+                )}
                 <div className="argent">
                     <h2>Ton argent</h2>
-                    <p>1500M</p>
+                    <p>{player?.money}</p>
                 </div>
                 <div className="board" id="board">
                     <Image src={"/monopoly/plateau.jpg"} alt="Monopoly" width={1241} height={1241} />
