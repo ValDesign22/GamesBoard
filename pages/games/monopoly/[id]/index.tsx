@@ -650,6 +650,16 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         });
     }
 
+    const shareGame = () => {
+        if (navigator.share) {
+            navigator.share({
+                title: "Monopoly",
+                text: "Rejoins moi sur Monopoly",
+                url: window.location.href
+            });
+        }
+    }
+
     const drawDots = (dotsGroup: HTMLCollectionOf<HTMLDivElement>, dots: number) => {
         if (dots === 1) {
             dotsGroup[0].children[0].className = "dot center"
@@ -766,6 +776,9 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
 
                 setStarted(gameData.data.started);
                 setPlayers(gameData.data.players);
+
+                const userPlayer = players.find(player => player.name = props.user?.username);
+                if (userPlayer) setPlayer(userPlayer);
             }
         });
 
@@ -774,6 +787,9 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 setStarted(true);
                 messages.push({ username: "Monopoly", message: `La partie a commencé` });
                 setMessages([...messages]);
+
+                const userPlayer = players.find(player => player.name = props.user?.username);
+                if (userPlayer) setPlayer(userPlayer);
             }
         });
 
@@ -857,9 +873,10 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 {!started && (
                     <div className="start">
                         <h2>Monopoly</h2>
-                        <p>Le jeu de société le plus connu au monde</p>
+                        <p>Rejoins la partie pour commencer</p>
                         <span>{players?.length} / 8</span>
                         <button onClick={startGame} disabled={players?.length < 2}>Commencer la partie</button>
+                        <button onClick={shareGame}>Partager la partie</button>
                     </div>
                 )}
                 <div className="argent">
