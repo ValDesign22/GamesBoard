@@ -273,7 +273,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             gameId,
             message,
             playerName
-        }).then((res) => {
+        }).then(() => {
             setMessage("");
             messageRef.current?.focus();
         });
@@ -390,16 +390,6 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         setRolling(false);
     }
 
-    const buyProperty = () => {
-        axios.post("/api/games/monopoly/buy", {
-            gameId: props.game.id,
-            user: {
-                id: props.user?.id,
-                username: props.user?.username
-            }
-        });
-    }
-
     const drawPlayers = (players: MonopolyPlayer[]) => {
         const playerColor = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff", "#ff8000", "#8000ff", "#0080ff", "#ff0080", "#00ff80", "#80ff00"];
         const playersDiv = document.getElementById("players") as HTMLDivElement;
@@ -421,8 +411,8 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
 
     const updatePlayerPos = (player: MonopolyPlayer) => {
         const playerElement = document.getElementById(player.name) as HTMLDivElement;
-
         const playerPosition = player.position;
+
         // Bottom part of the board
         if (playerPosition === 0) {
             playerElement.style.right = "50px";
@@ -648,6 +638,10 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         socket.on("monopoly-roll", (data: { gameId: string; dices: { one: number, two: number }; player: MonopolyPlayer }) => {
             if (data.gameId === props.game.id) {
                 messages?.push({ username: data.player.name, message: `a fait ${data.dices.one} et ${data.dices.two}` });
+                setPlayers(players.map(player => {
+                    if (player.name === data.player.name) return data.player;
+                    return player;
+                }));
 
                 if (data.player.canReRoll) {
                     messages?.push({ username: "Monopoly", message: `${data.player.name} peut rejouer` });
@@ -655,17 +649,14 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 }
                 else {
                     const nextPlayer = players.findIndex(player => player.name === data.player.name) + 1;
-                    messages?.push({ username: "Monopoly", message: `C'est au tour de ${players[nextPlayer >= players.length ? 0 : nextPlayer].name} de jouer` });
-                    setPlayerTurn(players[nextPlayer]);
+                    const nextPData = players[nextPlayer >= players.length ? 0 : nextPlayer];
+
+                    messages?.push({ username: "Monopoly", message: `C'est au tour de ${nextPData.name} de jouer` });
+                    setPlayerTurn(nextPData);
                 }
 
-                setPlayer(data.player);
-                setPlayers(players.map(player => {
-                    if (player.name === data.player.name) return data.player;
-                    return player;
-                }));
+                setPlayer(players.find(player => player.name === props.user.username)!);
                 setMessages([...messages!]);
-
                 drawPlayers(players);
             }
         });
@@ -687,9 +678,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
 
             if (caseAlreadyDrawn) caseAlreadyDrawn.remove();
 
-            const monopolyCase = document.createElement("span", {
-                is: "span"
-            }) as HTMLSpanElement;
+            const monopolyCase = document.createElement("span", { is: "span" }) as HTMLSpanElement;
             monopolyCase.id = `case-[${i}]`;
             monopolyCase.style.position = "absolute";
             monopolyCase.style.zIndex = "1";
@@ -745,8 +734,12 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                     </div>
                 )}
                 <div className="argent">
-                    <h2>Ton argent</h2>
-                    <p>{player?.money}</p>
+                    {players.map(player => (
+                        <>
+                            <h2 key={player.name}>{player.name} :</h2>
+                            <p key={player.name + "-money"}>{player.money}€</p>
+                        </>
+                    ))}
                 </div>
                 <div className="board" id="board">
                     <Image src={"/monopoly/plateau.jpg"} alt="Monopoly" width={1241} height={1241} />
@@ -773,7 +766,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                         </div>
                     </div>
 
-                    {playerTurn.name === player.name && (
+                    {(playerTurn.name === props.user.username) && started && (
                         <div className="dice">
                             <button className="roll-btn" id="roll" onClick={diceRoll}>Lancer</button>
 
@@ -806,21 +799,23 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                         <div className="players-group"></div>
                     </div>
                 </div>
-                <div className="chat">
-                    <h2>Chat</h2>
-                    <div className="messages">
-                        {messages?.map((message: any, index) => (
-                            <div key={index} className="message">
-                                <span className="author">{message.username === props.user.username ? "Moi" : message.username}</span>
-                                <span className="content">{message.message}</span>
-                            </div>
-                        ))}
+                {connected && (
+                    <div className="chat">
+                        <h2>Chat</h2>
+                        <div className="messages">
+                            {messages?.map((message: any, index) => (
+                                <div key={index} className="message">
+                                    <span className="author">{message.username === props.user.username ? "Moi" : message.username}</span>
+                                    <span className="content">{message.message}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="form">
+                            <textarea placeholder="Tapez un message" id="message" ref={messageRef} disabled={!connected} onChange={(e) => setMessage(e.target.value)} value={message} />
+                            <button onClick={sendMessage} disabled={!connected}>Envoyer</button>
+                        </div>
                     </div>
-                    <div className="form">
-                        <textarea placeholder="Tapez un message" id="message" ref={messageRef} disabled={!connected} onChange={(e) => setMessage(e.target.value)} value={message} />
-                        <button onClick={sendMessage} disabled={!connected}>Envoyer</button>
-                    </div>
-                </div>
+                )}
             </main>
         </>
     )

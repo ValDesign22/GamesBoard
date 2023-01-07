@@ -46,14 +46,26 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
             private: prived,
             password,
             roomType,
-            players: [],
+            players: [{
+                name: owner,
+                position: 0,
+                money: 1500,
+                chanceCardOutOfJail: false,
+                communityChestCardOutOfJail: false,
+                inJail: false,
+                jailTurns: 0,
+                houses: [],
+                canReRoll: false,
+                doubleRolls: 0
+            }],
             turn: 0,
             started: false,
             finished: false,
             winner: "",
             houses: [],
             chanceCards: [],
-            communityChestCards: []
+            communityChestCards: [],
+            playerTurn: owner
         });
     }
 
