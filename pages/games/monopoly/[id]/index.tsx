@@ -6,6 +6,7 @@ import {MonopolyGame, MonopolyPlayer} from "../../../../util/types";
 import axios from "axios";
 import {parseUser} from "../../../../util/authFunctions";
 import SocketIOClient from "socket.io-client";
+import {cases} from "../../../../util/constants/monopoly";
 
 export default function Room(props: {game: MonopolyGame, user: {username: string, id: string}}) {
     const [rolling, setRolling] = useState(false);
@@ -14,372 +15,10 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
     const [message, setMessage] = useState("");
     const [started, setStarted] = useState(props.game.started);
     const [players, setPlayers] = useState<MonopolyPlayer[]>(props.game.players);
-    const [player, setPlayer] = useState<MonopolyPlayer | null>(null);
+    const [player, setPlayer] = useState<MonopolyPlayer>(players.find(p => p.name === props.user.username)!);
+    const [playerTurn, setPlayerTurn] = useState(players.find(p => p.name === props.game.playerTurn)!);
 
     const messageRef = useRef<HTMLTextAreaElement>(null);
-
-    const cases = [
-        {
-            title: "Depart",
-            position: {
-                x: 1080,
-                y: 1080
-            },
-            width: 160,
-            height: 160
-        },
-        {
-            title: "Boulevard_de_Belleville",
-            position: {
-                x: 980,
-                y: 1080
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Caisse_de_Communaute",
-            position: {
-                x: 878,
-                y: 1080
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Rue_Lecourbe",
-            position: {
-                x: 775,
-                y: 1080
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Impots_sur_le_Revenu",
-            position: {
-                x: 674,
-                y: 1080
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Gare_Montparnasse",
-            position: {
-                x: 571,
-                y: 1080
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Rue_de_Vaugirard",
-            position: {
-                x: 469,
-                y: 1080
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Chance",
-            position: {
-                x: 366,
-                y: 1080
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Rue_de_Courcelles",
-            position: {
-                x: 264,
-                y: 1080
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Avenue_de_la_Republique",
-            position: {
-                x: 162,
-                y: 1080
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Prison",
-            position: {
-                x: 0,
-                y: 1080
-            },
-            width: 160,
-            height: 160
-        },
-        {
-            title: "Boulevard_de_la_Villette",
-            position: {
-                x: 0,
-                y: 980
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Compagnie_de_la_distribution_d_electricite",
-            position: {
-                x: 0,
-                y: 878
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Avenue_de_Neuilly",
-            position: {
-                x: 0,
-                y: 775
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Rue_de_Paradis",
-            position: {
-                x: 0,
-                y: 674
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Gare_de_Lyon",
-            position: {
-                x: 0,
-                y: 571
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Avenue_Mozart",
-            position: {
-                x: 0,
-                y: 469
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Caisse_de_Communaute",
-            position: {
-                x: 0,
-                y: 366
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Boulevard_Saint_Michel",
-            position: {
-                x: 0,
-                y: 264
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Place_Pigalle",
-            position: {
-                x: 0,
-                y: 162
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Parc_Gratuit",
-            position: {
-                x: 0,
-                y: 0
-            },
-            width: 160,
-            height: 160
-        },
-        {
-            title: "Avenue_Matignon",
-            position: {
-                x: 162,
-                y: 0
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Chance",
-            position: {
-                x: 264,
-                y: 0
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Boulevard_Malesherbes",
-            position: {
-                x: 366,
-                y: 0
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Boulevard_Henri_Martin",
-            position: {
-                x: 469,
-                y: 0
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Gare_du_Nord",
-            position: {
-                x: 571,
-                y: 0
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Faubourg_Saint_Honore",
-            position: {
-                x: 674,
-                y: 0
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Place_de_la_Bourse",
-            position: {
-                x: 775,
-                y: 0
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Compagnie_de_distribution_d_eau",
-            position: {
-                x: 878,
-                y: 0
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Rue_La_Fayette",
-            position: {
-                x: 980,
-                y: 0
-            },
-            width: 100,
-            height: 160
-        },
-        {
-            title: "Allez_en_Prison",
-            position: {
-                x: 1080,
-                y: 0
-            },
-            width: 160,
-            height: 160
-        },
-        {
-            title: "Avenue_de_Breteuil",
-            position: {
-                x: 1080,
-                y: 162
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Avenue_Foch",
-            position: {
-                x: 1080,
-                y: 264
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Caisse_de_Communaute",
-            position: {
-                x: 1080,
-                y: 366
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Boulevard_des_Capucines",
-            position: {
-                x: 1080,
-                y: 469
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Gare_Saint-Lazare",
-            position: {
-                x: 1080,
-                y: 571
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Chance",
-            position: {
-                x: 1080,
-                y: 674
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Avenue_des_Champs_Elysees",
-            position: {
-                x: 1080,
-                y: 775
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Taxe_de_luxe",
-            position: {
-                x: 1080,
-                y: 878
-            },
-            width: 160,
-            height: 100
-        },
-        {
-            title: "Rue_de_la_Paix",
-            position: {
-                x: 1080,
-                y: 980
-            },
-            width: 160,
-            height: 100
-        }
-    ];
 
     const chancesCards: {
         title: string;
@@ -651,13 +290,14 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
     }
 
     const shareGame = () => {
-        if (navigator.share) {
-            navigator.share({
-                title: "Monopoly",
-                text: "Rejoins moi sur Monopoly",
-                url: window.location.href
-            });
-        }
+        if (navigator.share) navigator.share({
+            title: "GamesBoard",
+            text: "Rejoins moi pour jouer au Monopoly !",
+            url: window.location.href
+        });
+        else navigator.clipboard.writeText(`Rejoins moi pour jouer au Monopoly : ${window.location.href}`)
+            .then(() => alert("Lien copié dans le presse-papier !"))
+            .catch(() => alert("Impossible de copier le lien dans le presse-papier !"));
     }
 
     const drawDots = (dotsGroup: HTMLCollectionOf<HTMLDivElement>, dots: number) => {
@@ -736,7 +376,10 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
 
             await axios.post("/api/games/monopoly/roll", {
                 gameId: props.game.id,
-                num: dice1Num + dice2Num,
+                dices: {
+                    one: dice1Num,
+                    two: dice2Num
+                },
                 user: {
                     id: props.user?.id,
                     username: props.user?.username
@@ -745,6 +388,208 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         }, 1000);
 
         setRolling(false);
+    }
+
+    const buyProperty = () => {
+        axios.post("/api/games/monopoly/buy", {
+            gameId: props.game.id,
+            user: {
+                id: props.user?.id,
+                username: props.user?.username
+            }
+        });
+    }
+
+    const drawPlayers = (players: MonopolyPlayer[]) => {
+        const playerColor = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff", "#ff8000", "#8000ff", "#0080ff", "#ff0080", "#00ff80", "#80ff00"];
+        const playersDiv = document.getElementById("players") as HTMLDivElement;
+        const playersGroup = playersDiv.getElementsByClassName("players-group") as HTMLCollectionOf<HTMLDivElement>;
+
+        playersGroup[0].innerHTML = "";
+
+        players.forEach((player, index) => {
+            const playerDiv = document.createElement("div");
+            playerDiv.className = "player";
+            playerDiv.style.backgroundColor = playerColor[index];
+            playerDiv.id = player.name;
+
+            playersGroup[0].appendChild(playerDiv);
+
+            updatePlayerPos(player);
+        });
+    }
+
+    const updatePlayerPos = (player: MonopolyPlayer) => {
+        const playerElement = document.getElementById(player.name) as HTMLDivElement;
+
+        const playerPosition = player.position;
+        // Bottom part of the board
+        if (playerPosition === 0) {
+            playerElement.style.right = "50px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 1) {
+            playerElement.style.right = "200px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 2) {
+            playerElement.style.right = "300px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 3) {
+            playerElement.style.right = "400px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 4) {
+            playerElement.style.right = "500px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 5) {
+            playerElement.style.right = "600px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 6) {
+            playerElement.style.right = "700px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 7) {
+            playerElement.style.right = "800px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 8) {
+            playerElement.style.right = "900px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 9) {
+            playerElement.style.right = "1000px";
+            playerElement.style.bottom = "50px";
+        }
+        else if (playerPosition === 10) {
+            playerElement.style.right = "1150px";
+            playerElement.style.bottom = "50px";
+        }
+
+        // Left part of the board
+        else if (playerPosition === 11) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "200px";
+        }
+        else if (playerPosition === 12) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "300px";
+        }
+        else if (playerPosition === 13) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "400px";
+        }
+        else if (playerPosition === 14) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "500px";
+        }
+        else if (playerPosition === 15) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "600px";
+        }
+        else if (playerPosition === 16) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "700px";
+        }
+        else if (playerPosition === 17) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "800px";
+        }
+        else if (playerPosition === 18) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "900px";
+        }
+        else if (playerPosition === 19) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "1000px";
+        }
+        else if (playerPosition === 20) {
+            playerElement.style.left = "50px";
+            playerElement.style.bottom = "1150px";
+        }
+
+        // Top part of the board
+        else if (playerPosition === 21) {
+            playerElement.style.left = "200px";
+            playerElement.style.top = "50px";
+        }
+        else if (playerPosition === 22) {
+            playerElement.style.left = "300px";
+            playerElement.style.top = "50px";
+        }
+        else if (playerPosition === 23) {
+            playerElement.style.left = "400px";
+            playerElement.style.top = "50px";
+        }
+        else if (playerPosition === 24) {
+            playerElement.style.left = "500px";
+            playerElement.style.top = "50px";
+        }
+        else if (playerPosition === 25) {
+            playerElement.style.left = "600px";
+            playerElement.style.top = "50px";
+        }
+        else if (playerPosition === 26) {
+            playerElement.style.left = "700px";
+            playerElement.style.top = "50px";
+        }
+        else if (playerPosition === 27) {
+            playerElement.style.left = "800px";
+            playerElement.style.top = "50px";
+        }
+        else if (playerPosition === 28) {
+            playerElement.style.left = "900px";
+            playerElement.style.top = "50px";
+        }
+        else if (playerPosition === 29) {
+            playerElement.style.left = "1000px";
+            playerElement.style.top = "50px";
+        }
+        else if (playerPosition === 30) {
+            playerElement.style.left = "1150px";
+            playerElement.style.top = "50px";
+        }
+
+        // Right part of the board
+        else if (playerPosition === 31) {
+            playerElement.style.right = "50px";
+            playerElement.style.top = "200px";
+        }
+        else if (playerPosition === 32) {
+            playerElement.style.right = "50px";
+            playerElement.style.top = "300px";
+        }
+        else if (playerPosition === 33) {
+            playerElement.style.right = "50px";
+            playerElement.style.top = "400px";
+        }
+        else if (playerPosition === 34) {
+            playerElement.style.right = "50px";
+            playerElement.style.top = "500px";
+        }
+        else if (playerPosition === 35) {
+            playerElement.style.right = "50px";
+            playerElement.style.top = "600px";
+        }
+        else if (playerPosition === 36) {
+            playerElement.style.right = "50px";
+            playerElement.style.top = "700px";
+        }
+        else if (playerPosition === 37) {
+            playerElement.style.right = "50px";
+            playerElement.style.top = "800px";
+        }
+        else if (playerPosition === 38) {
+            playerElement.style.right = "50px";
+            playerElement.style.top = "900px";
+        }
+        else if (playerPosition === 39) {
+            playerElement.style.right = "50px";
+            playerElement.style.top = "1000px";
+        }
     }
 
     // Websocket UseEffect
@@ -800,10 +645,28 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             }
         });
 
-        socket.on("monopoly-roll", (data: { gameId: string; num: number; user: { id: string; username: string } }) => {
+        socket.on("monopoly-roll", (data: { gameId: string; dices: { one: number, two: number }; player: MonopolyPlayer }) => {
             if (data.gameId === props.game.id) {
-                messages?.push({ username: data.user.username, message: `a fait un ${data.num}` });
+                messages?.push({ username: data.player.name, message: `a fait ${data.dices.one} et ${data.dices.two}` });
+
+                if (data.player.canReRoll) {
+                    messages?.push({ username: "Monopoly", message: `${data.player.name} peut rejouer` });
+                    setPlayerTurn(data.player);
+                }
+                else {
+                    const nextPlayer = players.findIndex(player => player.name === data.player.name) + 1;
+                    messages?.push({ username: "Monopoly", message: `C'est au tour de ${players[nextPlayer >= players.length ? 0 : nextPlayer].name} de jouer` });
+                    setPlayerTurn(players[nextPlayer]);
+                }
+
+                setPlayer(data.player);
+                setPlayers(players.map(player => {
+                    if (player.name === data.player.name) return data.player;
+                    return player;
+                }));
                 setMessages([...messages!]);
+
+                drawPlayers(players);
             }
         });
 
@@ -812,6 +675,8 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
 
     // Game UseEffect
     useEffect(() => {
+        drawPlayers(players);
+
         for (let i = 0; i < cases.length; i++) {
             const caseWidth = cases[i].width;
             const caseHeight = cases[i].height;
@@ -908,31 +773,37 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                         </div>
                     </div>
 
-                    <div className="dice">
-                        <button className="roll-btn" id="roll" onClick={diceRoll}>Lancer</button>
+                    {playerTurn.name === player.name && (
+                        <div className="dice">
+                            <button className="roll-btn" id="roll" onClick={diceRoll}>Lancer</button>
 
-                        <div className="dice-container">
-                            <div id="dice1">
-                                <div className="dots-group">
-                                    <div className="dot top-left"></div>
-                                    <div className="dot top"></div>
-                                    <div className="dot top-right"></div>
-                                    <div className="dot bottom-left"></div>
-                                    <div className="dot bottom"></div>
-                                    <div className="dot bottom-right"></div>
+                            <div className="dice-container">
+                                <div id="dice1">
+                                    <div className="dots-group">
+                                        <div className="dot top-left"></div>
+                                        <div className="dot top"></div>
+                                        <div className="dot top-right"></div>
+                                        <div className="dot bottom-left"></div>
+                                        <div className="dot bottom"></div>
+                                        <div className="dot bottom-right"></div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div id="dice2">
-                                <div className="dots-group">
-                                    <div className="dot top-left"></div>
-                                    <div className="dot top"></div>
-                                    <div className="dot top-right"></div>
-                                    <div className="dot bottom-left"></div>
-                                    <div className="dot bottom"></div>
-                                    <div className="dot bottom-right"></div>
+                                <div id="dice2">
+                                    <div className="dots-group">
+                                        <div className="dot top-left"></div>
+                                        <div className="dot top"></div>
+                                        <div className="dot top-right"></div>
+                                        <div className="dot bottom-left"></div>
+                                        <div className="dot bottom"></div>
+                                        <div className="dot bottom-right"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    )}
+
+                    <div id="players">
+                        <div className="players-group"></div>
                     </div>
                 </div>
                 <div className="chat">

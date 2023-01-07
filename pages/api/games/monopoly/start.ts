@@ -18,5 +18,5 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
 
     res.socket.server.io.emit("monopoly-start", { gameId });
 
-    res.status(201).json({ message: "Game started" });
+    res.status(201).json({ message: "Game started", started: true });
 }

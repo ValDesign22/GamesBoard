@@ -54,5 +54,6 @@ export default models.monopoly || model("monopoly", new Schema({
         position: { type: Number, required: true },
         jail: { type: Boolean, required: true },
         getOutOfJail: { type: Boolean, required: true },
-    }], required: true }
+    }], required: true },
+    playerTurn: { type: String, required: true },
 }));

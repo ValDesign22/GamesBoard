@@ -52,6 +52,7 @@ export interface MonopolyGame extends Game {
     houses: MonopolyHouse[];
     chanceCards: MonopolyCard[];
     communityChestCards: MonopolyCard[];
+    playerTurn: string;
 }
 
 export type NextSocketApiResponse = NextApiResponse & {
