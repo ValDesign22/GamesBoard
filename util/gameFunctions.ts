@@ -16,30 +16,8 @@ export function moveMonopolyPlayer(position: number, cases: number) {
     return position;
 }
 
-export function setMonopolyPlayerMoney(player: MonopolyPlayer, money: number) {
-    player.money = money;
-}
-
-export function setMonopolyPlayerChanceCardOutOfJail(player: MonopolyPlayer, chanceCardOutOfJail: boolean) {
-    player.chanceCardOutOfJail = chanceCardOutOfJail;
-}
-
-export function setMonopolyPlayerCommunityChestCardOutOfJail(player: MonopolyPlayer, communityChestCardOutOfJail: boolean) {
-    player.communityChestCardOutOfJail = communityChestCardOutOfJail;
-}
-
-export function setMonopolyPlayerInJail(player: MonopolyPlayer, inJail: boolean) {
-    player.position = 10;
-    player.inJail = inJail;
-    player.jailTurns = 0;
-}
-
 export function addHouseToMonopolyPlayer(player: MonopolyPlayer, house: MonopolyHouse) {
     player.houses.push(house);
-}
-
-export function removeHouseFromMonopolyPlayer(player: MonopolyPlayer, house: MonopolyHouse) {
-    player.houses = player.houses.filter((h) => h !== house);
 }
 
 export function addHouseToMonopolyPlayerHouse(player: MonopolyPlayer, house: MonopolyHouse) {

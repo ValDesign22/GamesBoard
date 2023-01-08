@@ -12,13 +12,13 @@ export default function handler(req: NextApiRequest, res: NextSocketApiResponse)
         id: String(Math.floor(Math.random() * 100000000000000000)),
         username: username,
         password: password
-    }, process.env.JWT_SECRET!, { expiresIn: '1d' });
+    }, process.env.JWT_SECRET!, { expiresIn: '1w' });
 
     res.setHeader('Set-Cookie', serialize(process.env.COOKIE_NAME!, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV !== 'development',
         sameSite: 'strict',
-        maxAge: 86400,
+        maxAge: 604800,
         path: '/',
     }));
 

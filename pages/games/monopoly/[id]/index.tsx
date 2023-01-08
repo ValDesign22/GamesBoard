@@ -149,7 +149,6 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             }
         }
     ];
-
     const communityChestCards: {
         title: string;
         action: (player: MonopolyPlayer, players: MonopolyPlayer[]) => void;
@@ -264,6 +263,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             }
         }
     ];
+    const playerColor = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff", "#ff8000", "#8000ff", "#0080ff", "#ff0080", "#00ff80", "#80ff00"];
 
     const sendMessage = () => {
         const gameId = props.game.id;
@@ -281,6 +281,8 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
 
     const startGame = () => {
         if (players.length < 2) return;
+
+        if (props.game.owner !== props.user.username) return;
 
         axios.post("/api/games/monopoly/start", {
             gameId: props.game.id
@@ -391,14 +393,13 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
     }
 
     const drawPlayers = (players: MonopolyPlayer[]) => {
-        const playerColor = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff", "#ff8000", "#8000ff", "#0080ff", "#ff0080", "#00ff80", "#80ff00"];
         const playersDiv = document.getElementById("players") as HTMLDivElement;
         const playersGroup = playersDiv.getElementsByClassName("players-group") as HTMLCollectionOf<HTMLDivElement>;
 
         playersGroup[0].innerHTML = "";
 
         players.forEach((player, index) => {
-            const playerDiv = document.createElement("div");
+            const playerDiv = document.createElement("div") as HTMLDivElement;
             playerDiv.className = "player";
             playerDiv.style.backgroundColor = playerColor[index];
             playerDiv.id = player.name;
@@ -729,14 +730,14 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                         <h2>Monopoly</h2>
                         <p>Rejoins la partie pour commencer</p>
                         <span>{players?.length} / 8</span>
-                        <button onClick={startGame} disabled={players?.length < 2}>Commencer la partie</button>
+                        <button onClick={startGame} disabled={((players?.length ?? 0) < 2) || (props.game.owner !== props.user.username)}>Commencer la partie</button>
                         <button onClick={shareGame}>Partager la partie</button>
                     </div>
                 )}
                 <div className="argent">
                     {players.map(player => (
                         <>
-                            <h2 key={player.name}>{player.name} :</h2>
+                            <h2 key={player.name}><span className="playerCircle" style={{ backgroundColor: playerColor[players.findIndex(p => p.name === player.name)] }}></span>{player.name} :</h2>
                             <p key={player.name + "-money"}>{player.money}€</p>
                         </>
                     ))}

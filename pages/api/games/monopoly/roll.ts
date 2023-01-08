@@ -1,4 +1,4 @@
-import {MonopolyPlayer, NextSocketApiResponse} from "../../../../util/types";
+import {MonopolyHouse, MonopolyPlayer, NextSocketApiResponse} from "../../../../util/types";
 import {NextApiRequest} from "next";
 import monopoly from "../../../../mongodb/models/monopoly";
 import mongoConnect from "../../../../mongodb/mongoConnect";
@@ -45,12 +45,39 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                 if (cases[nextPos].title.startsWith("Taxe")) player.money -= 100;
                 if (cases[nextPos].title.startsWith("Caisse")) {}
                 if (cases[nextPos].title.startsWith("Chance")) {}
-                if (cases[nextPos].title.startsWith("Gare")) {}
-                if (cases[nextPos].title.startsWith("Compagnie")) {}
                 if (cases[nextPos].title.startsWith("Allez")) {
                     nextPos = 10;
                     inJail = true;
                     jailTurns = 0;
+                }
+
+                const property = game.houses.find((house: MonopolyHouse) => house.name === cases[nextPos].title);
+                if (property) {
+                    if (property.owner) {
+                        if (property.owner !== username) {
+                            if (cases[nextPos].title.startsWith("Gare")) {
+                                const ownedGares = game.houses.filter((house: MonopolyHouse) => house.name.startsWith("Gare") && house.owner === property.owner);
+                                player.money -= cases[nextPos].rent![ownedGares.length - 1];
+                            }
+                            else if (cases[nextPos].title.startsWith("Compagnie")) {
+                                const ownedCompagnies = game.houses.filter((house: MonopolyHouse) => house.name.startsWith("Compagnie") && house.owner === property.owner);
+                                if (ownedCompagnies.length !== 0) player.money -= cases[nextPos].rent![ownedCompagnies.length - 1] * sum;
+                            }
+                            else {
+                                const colorCases = cases.filter((c) => c.color === property.color);
+                                const allOwned = colorCases.every((c) => {
+                                    const house = game.houses.find((h: MonopolyHouse) => h.name === c.title);
+                                    return house && house.owner === property.owner;
+                                });
+
+                                const hotelPrice = cases[nextPos].rent![5];
+                                const housePrice = cases[nextPos].rent![property.houses];
+
+                                if (property.hotel) player.money -= allOwned ? hotelPrice * 2 : hotelPrice;
+                                else player.money -= allOwned ? housePrice * 2 : housePrice;
+                            }
+                        }
+                    }
                 }
             }
 
