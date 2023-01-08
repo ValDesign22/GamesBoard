@@ -380,6 +380,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 setStarted(true);
                 messages.push({ username: "Monopoly", message: `La partie a commencé` });
                 setMessages([...messages]);
+                setPlayerTurn(players.find(player => player.name === props.game.owner)!);
 
                 const userPlayer = players.find(player => player.name = props.user?.username);
                 if (userPlayer) setPlayer(userPlayer);
