@@ -70,10 +70,10 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                                     return house && house.owner === property.owner;
                                 });
 
-                                const hotelPrice = cases[nextPos].rent![5];
                                 const housePrice = cases[nextPos].rent![property.houses];
 
-                                if (property.hotel) player.money -= allOwned ? hotelPrice * 2 : hotelPrice;
+                                if (property.hotel) player.money -= cases[nextPos].rent![5];
+                                else if (property.houses !== 0) player.money -= housePrice;
                                 else player.money -= allOwned ? housePrice * 2 : housePrice;
                             }
                         }

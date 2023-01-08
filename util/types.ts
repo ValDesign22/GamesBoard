@@ -22,16 +22,12 @@ export interface MonopolyHouse {
     houses: number;
     hotel: boolean;
     name: string;
+    hypothecated: boolean;
 }
 
 export interface MonopolyCard {
-    name: string;
-    description: string;
-    type: string;
-    amount: number;
-    position: number;
-    jail: boolean;
-    getOutOfJail: boolean;
+    title: string;
+    canBeKept: boolean;
 }
 export interface Game {
     id: string;

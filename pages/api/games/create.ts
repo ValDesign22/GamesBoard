@@ -1,10 +1,10 @@
 import { NextApiRequest } from "next";
 import rooms from "../../../mongodb/models/rooms";
 import mongoConnect from "../../../mongodb/mongoConnect";
-import {generateGameId} from "../../../util/gameFunctions";
+import {generateGameId, shuffleCards} from "../../../util/gameFunctions";
 import {MonopolyHouse, NextSocketApiResponse} from "../../../util/types";
 import monopoly from "../../../mongodb/models/monopoly";
-import {cases} from "../../../util/constants/monopoly";
+import {cases, chancesCards, communityChestCards} from "../../../util/constants/monopoly";
 
 export default async function handler(req: NextApiRequest, res: NextSocketApiResponse) {
     await mongoConnect();
@@ -40,7 +40,6 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
 
     if (roomType === "monopoly") {
         let houses: MonopolyHouse[] = [];
-
         cases.forEach((c) => {
             houses.push({
                 name: c.title,
@@ -48,9 +47,16 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                 price: c.price || 0,
                 owner: "",
                 houses: 0,
-                hotel: false
+                hotel: false,
+                hypothecated: false
             });
         });
+
+        let chanceCards = chancesCards;
+        let communityChestCardList = communityChestCards;
+
+        console.log(chanceCards);
+        console.log(communityChestCardList);
 
         await monopoly.create({
             id: newID,
@@ -77,8 +83,8 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
             finished: false,
             winner: "",
             houses: houses,
-            chanceCards: [],
-            communityChestCards: [],
+            chanceCards: shuffleCards(chanceCards),
+            communityChestCards: shuffleCards(communityChestCardList),
             playerTurn: owner
         });
     }

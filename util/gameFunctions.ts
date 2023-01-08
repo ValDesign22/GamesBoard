@@ -1,4 +1,4 @@
-import { MonopolyHouse, MonopolyPlayer } from "./types";
+import {MonopolyHouse, MonopolyPlayer} from "./types";
 
 export function generateGameId() {
     const numbers = '0123456789';
@@ -8,6 +8,21 @@ export function generateGameId() {
     for (let i = 0; i < 6; i++)  code += numbers[Math.floor(Math.random() * numbers.length)];
 
     return code;
+}
+
+export function shuffleCards(cards: any[]) {
+    let currentIndex = cards.length,  randomIndex;
+
+    while (currentIndex != 0) {
+
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        [cards[currentIndex], cards[randomIndex]] = [
+            cards[randomIndex], cards[currentIndex]];
+    }
+
+    return cards;
 }
 
 export function moveMonopolyPlayer(position: number, cases: number) {
