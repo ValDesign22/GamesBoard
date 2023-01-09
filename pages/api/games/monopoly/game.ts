@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
 
     const game = await monopoly.findOne({id: gameId});
 
-    if (!game) return res.status(404).json({message: "Game not found"});
+    if (!game) return res.status(404).redirect("/games/monopoly");
 
     res.status(200).json(game);
 }

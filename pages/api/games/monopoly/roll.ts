@@ -38,41 +38,53 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
             }
 
             if (!player.inJail) {
-                if (cases[nextPos].title.startsWith("Depart")) player.money += 200;
+                const nextCase = cases[nextPos];
+
+                if (nextCase.title.startsWith("Depart")) player.money += 200;
                 if (player.position > nextPos && player.position > 10 && nextPos < 10) player.money += 200;
 
-                if (cases[nextPos].title.startsWith("Impots")) player.money -= 200;
-                if (cases[nextPos].title.startsWith("Taxe")) player.money -= 100;
-                if (cases[nextPos].title.startsWith("Caisse")) {}
-                if (cases[nextPos].title.startsWith("Chance")) {}
-                if (cases[nextPos].title.startsWith("Allez")) {
+                if (nextCase.title.startsWith("Impots")) player.money -= 200;
+                if (nextCase.title.startsWith("Taxe")) player.money -= 100;
+                if (nextCase.title.startsWith("Caisse")) {}
+                if (nextCase.title.startsWith("Chance")) {}
+                if (nextCase.title.startsWith("Allez")) {
                     nextPos = 10;
                     inJail = true;
                     jailTurns = 0;
                 }
 
-                const property = game.houses.find((house: MonopolyHouse) => house.name === cases[nextPos].title);
+                const property = game.houses.find((house: MonopolyHouse) => house.name === nextCase.title);
                 if (property) {
                     if (property.owner) {
                         if (property.owner !== username) {
-                            if (cases[nextPos].title.startsWith("Gare")) {
+                            
+                            if (nextCase.title.startsWith("Gare")) {
                                 const ownedGares = game.houses.filter((house: MonopolyHouse) => house.name.startsWith("Gare") && house.owner === property.owner);
-                                player.money -= cases[nextPos].rent![ownedGares.length - 1];
+                                player.money -= nextCase.rent![ownedGares.length - 1];
                             }
-                            else if (cases[nextPos].title.startsWith("Compagnie")) {
+                            if (nextCase.title.startsWith("Compagnie")) {
                                 const ownedCompagnies = game.houses.filter((house: MonopolyHouse) => house.name.startsWith("Compagnie") && house.owner === property.owner);
-                                if (ownedCompagnies.length !== 0) player.money -= cases[nextPos].rent![ownedCompagnies.length - 1] * sum;
+                                if (ownedCompagnies.length !== 0) player.money -= nextCase.rent![ownedCompagnies.length - 1] * sum;
                             }
-                            else {
+                            if (
+                                !nextCase.title.startsWith("Gare")
+                                && !nextCase.title.startsWith("Compagnie")
+                                && !nextCase.title.startsWith("Chance")
+                                && !nextCase.title.startsWith("Caisse")
+                                && !nextCase.title.startsWith("Allez")
+                                && !nextCase.title.startsWith("Taxe")
+                                && !nextCase.title.startsWith("Impots")
+                                && !nextCase.title.startsWith("Depart")
+                            ) {
                                 const colorCases = cases.filter((c) => c.color === property.color);
                                 const allOwned = colorCases.every((c) => {
                                     const house = game.houses.find((h: MonopolyHouse) => h.name === c.title);
                                     return house && house.owner === property.owner;
                                 });
 
-                                const housePrice = cases[nextPos].rent![property.houses];
+                                const housePrice = nextCase.rent![property.houses];
 
-                                if (property.hotel) player.money -= cases[nextPos].rent![5];
+                                if (property.hotel) player.money -= nextCase.rent![5];
                                 else if (property.houses !== 0) player.money -= housePrice;
                                 else player.money -= allOwned ? housePrice * 2 : housePrice;
                             }

@@ -501,7 +501,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                     ))}
                 </div>
                 <div className="board" id="board">
-                    <Image src={"/monopoly/plateau.jpg"} alt="Monopoly" width={1241} height={1241} />
+                    <Image src={"/monopoly/plateau.jpg"} alt="Monopoly" width={1241} height={1241} priority={true} />
 
                     <div className="chanceCard">
                         <div className="inner">
