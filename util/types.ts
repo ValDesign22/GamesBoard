@@ -27,6 +27,7 @@ export interface MonopolyHouse {
 
 export interface MonopolyCard {
     title: string;
+    name: string;
     canBeKept: boolean;
 }
 export interface Game {

@@ -1,7 +1,7 @@
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Image from "next/image";
-import {FormEvent, useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {MonopolyGame, MonopolyPlayer} from "../../../../util/types";
 import axios from "axios";
 import {parseUser} from "../../../../util/authFunctions";
@@ -17,6 +17,11 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
     const [players, setPlayers] = useState<MonopolyPlayer[]>(props.game.players);
     const [player, setPlayer] = useState<MonopolyPlayer>(players.find(p => p.name === props.user.username)!);
     const [playerTurn, setPlayerTurn] = useState(players.find(p => p.name === props.game.playerTurn)!);
+    const [caseData, setCase] = useState(cases.find((c, index) => index === (player?.position || 0))!);
+    const [showCase, setShowCase] = useState(false);
+    const [properties, setProperties] = useState(props.game.houses);
+    const [caseProperty, setCaseProperty] = useState(properties.find(p => p.name === caseData.title));
+    const [played, setPlayed] = useState(false);
 
     const messageRef = useRef<HTMLTextAreaElement>(null);
 
@@ -45,6 +50,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             gameId: props.game.id
         }).then((res) => {
             setStarted(res.data.started);
+            setPlayerTurn(players.find(p => p.name === props.game.owner)!);
         });
     }
 
@@ -144,9 +150,10 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                     username: props.user?.username
                 }
             });
-        }, 1000);
 
-        setRolling(false);
+            setRolling(false);
+            setPlayed(true);
+        }, 1000);
     }
 
     const drawPlayers = (players: MonopolyPlayer[]) => {
@@ -169,7 +176,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
 
     const updatePlayerPos = (player: MonopolyPlayer) => {
         const playerElement = document.getElementById(player.name) as HTMLDivElement;
-        const playerPosition = player.position;
+        const playerPosition = player?.position || 0;
 
         // Bottom part of the board
         if (playerPosition === 0) {
@@ -340,6 +347,17 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         }
     }
 
+    const upgradeProperty = () => {}
+
+    const buyProperty = () => {}
+
+    const passTurn = () => {
+        axios.post('/api/games/monopoly/next', {
+            player: player,
+            gameId: props.game.id
+        });
+    }
+
     // Websocket UseEffect
     useEffect((): any => {
         const socket = SocketIOClient(process.env.APP_URL!, {
@@ -394,14 +412,18 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             }
         });
 
-        socket.on("monopoly-roll", (data: { gameId: string; dices: { one: number, two: number }; player: MonopolyPlayer }) => {
+        socket.on("monopoly-roll", (data: { gameId: string; dices: { one: number, two: number }; players: MonopolyPlayer[], player: MonopolyPlayer }) => {
             if (data.gameId === props.game.id) {
                 messages?.push({ username: data.player.name, message: `a fait ${data.dices.one} et ${data.dices.two}` });
-                setPlayers(players.map(player => {
-                    if (player.name === data.player.name) return data.player;
-                    return player;
-                }));
+                setPlayers(data.players);
+                setPlayer(players.find(player => player.name === props.user.username)!);
+                setMessages([...messages!]);
+                drawPlayers(players);
+            }
+        });
 
+        socket.on("monopoly-next", (data: { gameId: string; player: MonopolyPlayer }) => {
+            if (data.gameId === props.game.id) {
                 if (data.player.canReRoll) {
                     messages?.push({ username: "Monopoly", message: `${data.player.name} peut rejouer` });
                     setPlayerTurn(data.player);
@@ -417,6 +439,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 setPlayer(players.find(player => player.name === props.user.username)!);
                 setMessages([...messages!]);
                 drawPlayers(players);
+                setPlayed(false);
             }
         });
 
@@ -467,7 +490,13 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             const target = e.target as HTMLSpanElement;
             const caseId = target.id;
             const caseIndex = parseInt(caseId.replace("case-[", "").replace("]", ""));
-            console.log(cases[caseIndex]);
+
+            if (caseIndex >= 0 && caseIndex < cases.length) {
+                const caseData = cases[caseIndex];
+                setCase(caseData);
+                setCaseProperty(properties.find(property => property.name === caseData.title));
+                setShowCase(true);
+            }
         }
 
         const monopolyCases = document.getElementsByClassName("case") as HTMLCollectionOf<HTMLSpanElement>;
@@ -500,6 +529,12 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                         </>
                     ))}
                 </div>
+                {played && (
+                    <div className="played-buttons">
+                        <button className="buy" onClick={buyProperty}>Acheter</button>
+                        <button className="pass" onClick={passTurn}>Passer</button>
+                    </div>
+                )}
                 <div className="board" id="board">
                     <Image src={"/monopoly/plateau.jpg"} alt="Monopoly" width={1241} height={1241} priority={true} />
 
@@ -549,6 +584,40 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                                         <div className="dot bottom"></div>
                                         <div className="dot bottom-right"></div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showCase && (
+                        <div className="property-view">
+                            <div className="inner">
+                                <div className="property">
+                                    <div className="close">
+                                        <button onClick={() => setShowCase(false)}>X</button>
+                                    </div>
+                                    <div className="header">
+                                        <h2 className="name">{caseData.title.replaceAll("_", " ")}</h2>
+                                        {caseData.price && <p className="price">{caseData.price}€</p>}
+                                    </div>
+                                    {caseProperty && (
+                                        <div className="buttons">
+                                            {caseData.upgradePrice
+                                                && caseProperty.owner
+                                                && caseProperty.owner === props.user.username
+                                                && caseProperty.houses < 4
+                                                && !caseProperty.hotel
+                                                && (
+                                                <button className="upgrade" onClick={upgradeProperty}>Améliorer <span className="price">({caseData.upgradePrice}€)</span></button>
+                                            )}
+                                            {caseData.price
+                                                && player.position === cases.findIndex(c => c.title === caseData.title)
+                                                && !caseProperty.owner
+                                                && (
+                                                <button className="buy" onClick={buyProperty}>Acheter <span className="price">({caseData.price}€)</span></button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -40,10 +40,12 @@ export default models.monopoly || model("monopoly", new Schema({
     }], required: true },
     chanceCards: { type: [{
         title: { type: String, required: true },
+        name: { type: String, required: true },
         canBeKept: { type: Boolean, required: false, default: false },
     }], required: true },
     communityChestCards: { type: [{
         title: { type: String, required: true },
+        name: { type: String, required: true },
         canBeKept: { type: Boolean, required: false, default: false },
     }], required: true },
     playerTurn: { type: String, required: true },

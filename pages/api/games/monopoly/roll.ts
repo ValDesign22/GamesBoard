@@ -57,14 +57,25 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                 if (property) {
                     if (property.owner) {
                         if (property.owner !== username) {
-                            
+                            const propertyOwner = game.players.find((p: MonopolyPlayer) => p.name === property.owner);
+
                             if (nextCase.title.startsWith("Gare")) {
                                 const ownedGares = game.houses.filter((house: MonopolyHouse) => house.name.startsWith("Gare") && house.owner === property.owner);
-                                player.money -= nextCase.rent![ownedGares.length - 1];
+                                if (ownedGares.length !== 0) {
+                                    const rent = nextCase.rent![ownedGares.length - 1];
+                                    player.money -= rent;
+                                    propertyOwner!.money += rent;
+                                }
+
                             }
                             if (nextCase.title.startsWith("Compagnie")) {
                                 const ownedCompagnies = game.houses.filter((house: MonopolyHouse) => house.name.startsWith("Compagnie") && house.owner === property.owner);
-                                if (ownedCompagnies.length !== 0) player.money -= nextCase.rent![ownedCompagnies.length - 1] * sum;
+                                const rent = nextCase.rent![ownedCompagnies.length - 1] * sum;
+                                if (ownedCompagnies.length !== 0) {
+                                    player.money -= rent;
+                                    propertyOwner!.money += rent;
+                                }
+
                             }
                             if (
                                 !nextCase.title.startsWith("Gare")
@@ -83,11 +94,30 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                                 });
 
                                 const housePrice = nextCase.rent![property.houses];
+                                const rent = property.houses !== 0 ? housePrice : (allOwned ? housePrice * 2 : housePrice);
 
-                                if (property.hotel) player.money -= nextCase.rent![5];
-                                else if (property.houses !== 0) player.money -= housePrice;
-                                else player.money -= allOwned ? housePrice * 2 : housePrice;
+                                if (property.hotel) {
+                                    player.money -= nextCase.rent![5];
+                                    propertyOwner!.money += nextCase.rent![5];
+                                }
+                                else {
+                                    player.money -= rent;
+                                    propertyOwner!.money += rent;
+                                }
                             }
+
+                            game.players = game.players.map((p: MonopolyPlayer) => p.name === propertyOwner!.name ? {
+                                name: propertyOwner!.name,
+                                position: propertyOwner!.position,
+                                money: propertyOwner!.money,
+                                chanceCardOutOfJail: propertyOwner!.chanceCardOutOfJail,
+                                communityCardOutOfJail: propertyOwner!.communityCardOutOfJail,
+                                inJail: propertyOwner!.inJail,
+                                jailTurns: propertyOwner!.jailTurns,
+                                houses: propertyOwner!.houses,
+                                canReRoll: propertyOwner!.canReRoll,
+                                doubleRolls: propertyOwner!.doubleRolls
+                            } : p);
                         }
                     }
                 }
@@ -128,7 +158,7 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
             };
             await monopoly.findOneAndUpdate({ id: gameId }, newGame);
 
-            res.socket.server.io.emit("monopoly-roll", {gameId, dices: {one, two}, player: newPlayer});
+            res.socket.server.io.emit("monopoly-roll", {gameId, dices: {one, two}, players: newPlayers, player: newPlayer });
         }
     }
     res.status(201).json({message: "Dice rolled"});

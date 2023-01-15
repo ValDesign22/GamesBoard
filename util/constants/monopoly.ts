@@ -495,24 +495,28 @@ export const cases = [
 
 export const chancesCards: {
     title: string;
+    name: string;
     action: (player: MonopolyPlayer, players: MonopolyPlayer[]) => void;
     canBeKept?: boolean;
 }[]
     = [
     {
         title: "Rendez-vous à la Rue de la Paix",
+        name: "rendez_vous_a_la_rue_de_la_paix",
         action: (player: MonopolyPlayer) => {
             player.position = 39;
         }
     },
     {
         title: "Avancer jusqu'à la case départ",
+        name: "avancer_jusqu_a_la_case_depart",
         action: (player: MonopolyPlayer) => {
             player.position = 0;
         }
     },
     {
-        title: "Rendez-vous au Boulevard Henri-Martin. Si vous passez par la case départ, recevez 200M",
+        title: "Rendez-vous au Boulevard Henri-Martin. Si vous passez par la case départ, recevez 200€",
+        name: "rendez_vous_au_boulevard_henri_martin",
         action: (player: MonopolyPlayer) => {
             if (player.position > 24) player.money += 200;
 
@@ -520,7 +524,8 @@ export const chancesCards: {
         }
     },
     {
-        title: "Avancez au Boulevard de la Villette. Si vous passez par la case départ, recevez 200M",
+        title: "Avancez au Boulevard de la Villette. Si vous passez par la case départ, recevez 200€",
+        name: "avancez_au_boulevard_de_la_villette",
         action: (player: MonopolyPlayer) => {
             if (player.position > 11) player.money += 200;
 
@@ -528,7 +533,8 @@ export const chancesCards: {
         }
     },
     {
-        title: "Vous êtes imposé pour les réparations de voirie à raison de 40M par maison et 115M par hôtel.",
+        title: "Vous êtes imposé pour les réparations de voirie à raison de 40€ par maison et 115€ par hôtel.",
+        name: "vous_etes_impose_pour_les_reparations_de_voirie",
         action: (player: MonopolyPlayer) => {
             let playerHouses = 0;
             let playerHotels = 0;
@@ -542,7 +548,8 @@ export const chancesCards: {
         }
     },
     {
-        title: "Avancez jusqu'à la Gare de Lyon. Si vous passez par la case départ, recevez 200M",
+        title: "Avancez jusqu'à la Gare de Lyon. Si vous passez par la case départ, recevez 200€",
+        name: "avancez_jusqu_a_la_gare_de_lyon",
         action: (player: MonopolyPlayer) => {
             if (player.position > 15) player.money += 200;
 
@@ -550,19 +557,22 @@ export const chancesCards: {
         }
     },
     {
-        title: "Vous avez gagné le prix de mots croisés. Recevez 100M",
+        title: "Vous avez gagné le prix de mots croisés. Recevez 100€",
+        name: "vous_avez_gagne_le_prix_de_mots_croises",
         action: (player: MonopolyPlayer) => {
             player.money += 100;
         }
     },
     {
-        title: "La banque vous verse un dividende de 50M",
+        title: "La banque vous verse un dividende de 50€",
+        name: "la_banque_vous_verser_un_dividende",
         action: (player: MonopolyPlayer) => {
             player.money += 50;
         }
     },
     {
         title: "Vous êtes libéré de prison. Cette carte peut être conservée jusq'à ce qu'elle soit utilisée ou vendue.",
+        name: "vous_etes_libere_de_prison",
         action: (player: MonopolyPlayer) => {
             player.inJail = false;
             player.jailTurns = 0;
@@ -571,12 +581,14 @@ export const chancesCards: {
     },
     {
         title: "Reculez de trois cases",
+        name: "reculez_de_trois_cases",
         action: (player: MonopolyPlayer) => {
             player.position -= 3;
         }
     },
     {
-        title: "Aller en prison. Rendez-vous directement en prison. Ne franchissez pas par la case départ, ne touchez pas 200M",
+        title: "Aller en prison. Rendez-vous directement en prison. Ne franchissez pas par la case départ, ne touchez pas 200€",
+        name: "aller_en_prison",
         action: (player: MonopolyPlayer) => {
             player.position = 10;
             player.inJail = true;
@@ -584,7 +596,8 @@ export const chancesCards: {
         }
     },
     {
-        title: "Faites des réparations dans toutes vos maisons. Versez pour chaque maison 25M et pour chaque hôtel 100M",
+        title: "Faites des réparations dans toutes vos maisons. Versez pour chaque maison 25€ et pour chaque hôtel 100€",
+        name: "faites_des_reparations_dans_toutes_vos_maisons",
         action: (player: MonopolyPlayer) => {
             let playerHouses = 0;
             let playerHotels = 0;
@@ -598,25 +611,29 @@ export const chancesCards: {
         }
     },
     {
-        title: "Amende pour excès de vitesse 15M",
+        title: "Amende pour excès de vitesse 15€",
+        name: "amende_pour_exces_de_vitesse",
         action: (player: MonopolyPlayer) => {
             player.money -= 15;
         }
     },
     {
-        title: "Payer pour frais de scolarité 150M",
+        title: "Payer pour frais de scolarité 150€",
+        name: "payer_pour_frais_de_scolarite",
         action: (player: MonopolyPlayer) => {
             player.money -= 150;
         }
     },
     {
-        title: "Amende pour ivresse 20M",
+        title: "Amende pour ivresse 20€",
+        name: "amende_pour_ivresse",
         action: (player: MonopolyPlayer) => {
             player.money -= 20;
         }
     },
     {
-        title: "Votre immeuble et votre prêt rapportent. Vous devez toucher 150M",
+        title: "Votre immeuble et votre prêt rapportent. Vous devez toucher 150€",
+        name: "votre_immeuble_et_votre_pret_rapportent",
         action: (player: MonopolyPlayer) => {
             player.money += 150;
         }
@@ -625,37 +642,43 @@ export const chancesCards: {
 
 export const communityChestCards: {
     title: string;
+    name: string;
     action: (player: MonopolyPlayer, players: MonopolyPlayer[]) => void;
     canBeKept?: boolean;
 }[]
     = [
     {
-        title: "Placez-vous sur la case départ. (Collectez 200M)",
+        title: "Placez-vous sur la case départ. (Collectez 200€)",
+        name: "placez_vous_sur_la_case_depart",
         action: (player: MonopolyPlayer) => {
             player.position = 0;
             player.money += 200;
         }
     },
     {
-        title: "Erreur de la banque en votre faveur. Recevez 200M",
+        title: "Erreur de la banque en votre faveur. Recevez 200€",
+        name: "erreur_de_la_banque_en_votre_faveur",
         action: (player: MonopolyPlayer) => {
             player.money += 200;
         }
     },
     {
-        title: "Payez la note du médecin 50M",
+        title: "Payez la note du médecin 50€",
+        name: "payez_la_note_du_medecin",
         action: (player: MonopolyPlayer) => {
             player.money -= 50;
         }
     },
     {
-        title: "La vente de votre stock vous rapporte 50M",
+        title: "La vente de votre stock vous rapporte 50€",
+        name: "la_vente_de_votre_stock_vous_rapporte",
         action: (player: MonopolyPlayer) => {
             player.money += 50;
         }
     },
     {
         title: "Vous êtes libéré de prison. Cette carte peut être conservée jusqu'à ce qu'elle soit utilisée ou vendue.",
+        name: "vous_etes_libere_de_prison",
         action: (player: MonopolyPlayer) => {
             player.inJail = false;
             player.jailTurns = 0;
@@ -664,18 +687,21 @@ export const communityChestCards: {
     },
     {
         title: "Retournez à Belleville",
+        name: "retournez_a_belleville",
         action: (player: MonopolyPlayer) => {
             player.position = 1;
         }
     },
     {
-        title: "Recevez votre revenu annuel 100M",
+        title: "Recevez votre revenu annuel 100€",
+        name: "recevez_votre_revenu_annuel",
         action: (player: MonopolyPlayer) => {
             player.money += 100;
         }
     },
     {
-        title: "C'est votre anniversaire. Chaque joueur doit vous donner 10M",
+        title: "C'est votre anniversaire. Chaque joueur doit vous donner 10€",
+        name: "c_est_votre_anniversaire",
         action: (player: MonopolyPlayer, players: MonopolyPlayer[]) => {
             for (let i = 0; i < players.length; i++) {
                 if (players[i].name !== player.name) {
@@ -686,31 +712,36 @@ export const communityChestCards: {
         }
     },
     {
-        title: "Les contributions vous remboursent la somme de 20M",
+        title: "Les contributions vous remboursent la somme de 20€",
+        name: "les_contributions_vous_remboursent_la_somme_de",
         action: (player: MonopolyPlayer) => {
             player.money += 20;
         }
     },
     {
-        title: "Recevez votre intérêt sur l'emprunt à 7% 25M",
+        title: "Recevez votre intérêt sur l'emprunt à 7% 25€",
+        name: "recevez_votre_interet_sur_l_emprunt_a_7",
         action: (player: MonopolyPlayer) => {
             player.money += 25;
         }
     },
     {
-        title: "Payez votre Police d'Assurance 50M",
+        title: "Payez votre Police d'Assurance 50€",
+        name: "payez_votre_police_d_assurance",
         action: (player: MonopolyPlayer) => {
             player.money -= 50;
         }
     },
     {
-        title: "Payez une amende de 10M ou bien tirez une carte Chance",
+        title: "Payez une amende de 10€ ou bien tirez une carte Chance",
+        name: "payez_une_amende_de_10_ou_bien_tirez_une_carte_chance",
         action: (player: MonopolyPlayer) => {
             player.money -= 10;
         }
     },
     {
-        title: "Rendez-vous à la gare la plus proche. Si vous passez par la case départ, recevez 200M",
+        title: "Rendez-vous à la gare la plus proche. Si vous passez par la case départ, recevez 200€",
+        name: "rendez_vous_a_la_gare_la_plus_proche",
         action: (player: MonopolyPlayer) => {
             const gares = [5, 15, 25, 35];
             const newPoses = [];
@@ -725,13 +756,15 @@ export const communityChestCards: {
         }
     },
     {
-        title: "Vous avez gagné le deuxième Prix de Beauté. Recevez 10M",
+        title: "Vous avez gagné le deuxième Prix de Beauté. Recevez 10€",
+        name: "vous_avez_gagne_le_deuxieme_prix_de_beaute",
         action: (player: MonopolyPlayer) => {
             player.money += 10;
         }
     },
     {
-        title: "Vous héritez 100M",
+        title: "Vous héritez 100€",
+        name: "vous_heritez",
         action: (player: MonopolyPlayer) => {
             player.money += 100;
         }

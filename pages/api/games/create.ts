@@ -55,9 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
         let chanceCards = chancesCards;
         let communityChestCardList = communityChestCards;
 
-        console.log(chanceCards);
-        console.log(communityChestCardList);
-
         await monopoly.create({
             id: newID,
             name,
