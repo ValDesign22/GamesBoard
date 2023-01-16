@@ -2,11 +2,12 @@ import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import {useEffect, useRef, useState} from "react";
-import {MonopolyGame, MonopolyPlayer} from "../../../../util/types";
+import {MonopolyGame, MonopolyHouse, MonopolyPlayer} from "../../../../util/types";
 import axios from "axios";
 import {parseUser} from "../../../../util/authFunctions";
 import SocketIOClient from "socket.io-client";
 import {cases} from "../../../../util/constants/monopoly";
+import { moveMonopolyPlayer } from "../../../../util/gameFunctions";
 
 export default function Room(props: {game: MonopolyGame, user: {username: string, id: string}}) {
     const [rolling, setRolling] = useState(false);
@@ -17,11 +18,12 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
     const [players, setPlayers] = useState<MonopolyPlayer[]>(props.game.players);
     const [player, setPlayer] = useState<MonopolyPlayer>(players.find(p => p.name === props.user.username)!);
     const [playerTurn, setPlayerTurn] = useState(players.find(p => p.name === props.game.playerTurn)!);
-    const [caseData, setCase] = useState(cases.find((c, index) => index === (player?.position || 0))!);
+    const [caseData, setCase] = useState(cases[player.position]);
     const [showCase, setShowCase] = useState(false);
     const [properties, setProperties] = useState(props.game.houses);
     const [caseProperty, setCaseProperty] = useState(properties.find(p => p.name === caseData.title));
     const [played, setPlayed] = useState(false);
+    const [canRoll, setCanRoll] = useState(true);
 
     const messageRef = useRef<HTMLTextAreaElement>(null);
 
@@ -118,6 +120,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
 
     const diceRoll = () => {
         if (rolling) return;
+        if (!canRoll) return;
 
         setRolling(true);
 
@@ -150,10 +153,13 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                     username: props.user?.username
                 }
             });
-
-            setRolling(false);
-            setPlayed(true);
         }, 1000);
+        
+
+        setRolling(false);
+        setPlayed(true);
+        setCase(cases[moveMonopolyPlayer(player.position, dice1Num + dice2Num)]);
+        setCanRoll(false);
     }
 
     const drawPlayers = (players: MonopolyPlayer[]) => {
@@ -347,19 +353,19 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         }
     }
 
-    const buyProperty = (caseId: number) => {
+    const buyProperty = () => {
         axios.post('/api/games/monopoly/buy', {
             player: player,
             gameId: props.game.id,
-            caseId: caseId
+            caseId: cases.findIndex(c => c.title === caseData.title)
         });
     }
 
-    const upgradeProperty = (caseId: number) => {
+    const upgradeProperty = () => {
         axios.post('/api/games/monopoly/upgrade', {
             player: player,
             gameId: props.game.id,
-            caseId: caseId
+            caseId: cases.findIndex(c => c.title === caseData.title)
         });
     }
 
@@ -379,11 +385,6 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         socket.on("connect", async () => {
             console.log("Connected to socket");
             setConnected(true);
-
-            await axios.post("/api/games/monopoly/join", {
-                gameId: props.game.id,
-                username: props.user?.username
-            });
         });
 
         socket.on("monopoly-join", async (data: { gameId: string, username: string }) => {
@@ -452,6 +453,29 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 setMessages([...messages!]);
                 drawPlayers(players);
                 setPlayed(false);
+                setCanRoll(true);
+            }
+        });
+
+        socket.on("monopoly-buy", (data: {gameId: string, player: MonopolyPlayer, caseId: number, cases: MonopolyHouse[], players: MonopolyPlayer[]}) => {
+            if (data.gameId === props.game.id) {
+                messages?.push({ username: `${data.player.name}`, message: `a acheté la propriété ${cases[data.caseId].title.replaceAll("_", " ")}` });
+                setPlayer(data.player);
+                setPlayers(data.players);
+                setProperties(data.cases);
+                setMessages([...messages!]);
+                drawPlayers(players);
+            }
+        });
+
+        socket.on("monopoly-upgrade", (data: {gameId: string, player: MonopolyPlayer, caseId: number, houseCount: number, hotel: boolean, cases: MonopolyHouse[], players: MonopolyPlayer[]}) => {
+            if (data.gameId === props.game.id) {
+                messages?.push({ username: `${data.player.name}`, message: `a amélioré la propriété ${cases[data.caseId].title.replaceAll("_", " ")}` });
+                setPlayer(data.player);
+                setPlayers(data.players);
+                setProperties(data.cases);
+                setMessages([...messages!]);
+                drawPlayers(players);
             }
         });
 
@@ -543,7 +567,13 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 </div>
                 {played && (
                     <div className="played-buttons">
-                        <button className="buy" onClick={() => buyProperty(player.position)}>Acheter</button>
+                        {played
+                        && caseData.price
+                        && caseData.price <= player.money
+                        && !properties.find(property => property.name === caseData.title)
+                        && caseProperty
+                        && caseProperty.owner !== player.name
+                        && (<button className="buy" onClick={buyProperty}>Acheter</button>)}
                         <button className="pass" onClick={passTurn}>Passer</button>
                     </div>
                 )}
@@ -574,7 +604,9 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                         </div>
                     </div>
 
-                    {(playerTurn.name === props.user.username) && started && (
+                    {(playerTurn.name === props.user.username)
+                    && started
+                    && (
                         <div className="dice">
                             <button className="roll-btn" id="roll" onClick={diceRoll}>Lancer</button>
 
@@ -611,8 +643,15 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                                         <button onClick={() => setShowCase(false)}>X</button>
                                     </div>
                                     <div className="header">
+                                        <div className="houses">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            {caseProperty && caseProperty.hotel && <img src={"/monopoly/hotel.png"} alt="Hotel" />}
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            {caseProperty && !caseProperty.hotel && caseProperty.houses > 0 && <img src={`/monopoly/house-${caseProperty.houses}.png`} alt="House" />}
+                                        </div>
                                         <h2 className="name">{caseData.title.replaceAll("_", " ")}</h2>
                                         {caseData.price && <p className="price">{caseData.price}€</p>}
+                                        <h3 className="owner">{caseProperty && caseProperty.owner ? caseProperty.owner : "Aucun propriétaire"}</h3>
                                     </div>
                                     {caseProperty && (
                                         <div className="buttons">
@@ -622,13 +661,13 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                                                 && caseProperty.houses < 4
                                                 && !caseProperty.hotel
                                                 && (
-                                                <button className="upgrade" onClick={() => upgradeProperty(player.position)}>Améliorer <span className="price">({caseData.upgradePrice}€)</span></button>
+                                                <button className="upgrade" onClick={upgradeProperty}>Améliorer <span className="price">({caseData.upgradePrice}€)</span></button>
                                             )}
-                                            {caseData.price
-                                                && player.position === cases.findIndex(c => c.title === caseData.title)
-                                                && !caseProperty.owner
+                                            {player.position === cases.findIndex(c => c.title === caseData.title)
+                                                && caseProperty.owner !== player.name
+                                                && played
                                                 && (
-                                                <button className="buy" onClick={() => buyProperty(player.position)}>Acheter <span className="price">({caseData.price}€)</span></button>
+                                                <button className="buy" onClick={buyProperty}>Acheter <span className="price">({caseData.price}€)</span></button>
                                             )}
                                         </div>
                                     )}
@@ -680,6 +719,13 @@ export const getServerSideProps: GetServerSideProps<{ game: MonopolyGame, user: 
         }
     }
 
+    if (!room.data) return {
+        redirect: {
+            destination: "/games/monopoly",
+            permanent: false
+        }
+    }
+
     const user = parseUser(context);
 
     if (!user) return {
@@ -688,6 +734,25 @@ export const getServerSideProps: GetServerSideProps<{ game: MonopolyGame, user: 
             permanent: false
         }
     }
+
+    if (room.data.private && !room.data.players.find((p: MonopolyPlayer) => p.name === user.username)) return {
+        redirect: {
+            destination: "/games/monopoly",
+            permanent: false
+        }
+    }
+
+    if (room.data.started && !room.data.players.find((p: MonopolyPlayer) => p.name === user.username)) return {
+        redirect: {
+            destination: "/games/monopoly",
+            permanent: false
+        }
+    }
+
+    await axios.post(`${process.env.APP_URL}/api/games/monopoly/join`, {
+        gameId: room.data.id,
+        username: user.username
+    });
 
     return {
         props: {

@@ -17,13 +17,16 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
         if (playerIndex !== -1) {
             const playerToBuy = game.players[playerIndex];
 
-            if (!game.houses.find((h: any) => h.name === caseToBuy.title)) {
+            const dbCase = game.houses.find((h: any) => h.name === caseToBuy.title);
+
+            if (dbCase) {
+                if (dbCase.owner !== player.name) return res.status(400).end();
                 if (!caseToBuy.price) return res.status(400).end();
 
                 if (playerToBuy.money >= caseToBuy.price) {
                     game.houses.push({
                         name: caseToBuy.title,
-                        color: caseToBuy.color,
+                        color: caseToBuy.color || "white",
                         price: caseToBuy.price,
                         owner: player.name,
                         houses: 0,
@@ -37,7 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
 
                     await game.save();
 
-                    res.socket.server.io.emit("monopoly-buy", {gameId, player, caseId});
+                    res.socket.server.io.emit("monopoly-buy", {gameId, player, caseId, cases: game.houses, players: game.players});
+                    res.socket.server.io.emit("monopoly-next", {gameId, player});
                 }
             }
         }

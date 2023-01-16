@@ -223,6 +223,23 @@
                     width: 100%;
                     margin-bottom: 1rem;
 
+                    // .house => imgs
+                    .houses {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                        margin-bottom: 1rem;
+
+                        img {
+                            width: 2rem;
+                            height: 2rem;
+                            margin: 0 0.5rem;
+                            cursor: pointer;
+                        }
+                    }
+
                     .name {
                         font-size: 2rem;
                         margin-right: 1rem;

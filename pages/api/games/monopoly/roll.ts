@@ -49,6 +49,84 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                     player.money += 200;
 
                     res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `est passé par la case départ et a gagné 200€`, playerName: player.name });
+
+                    if (nextCase.title.startsWith("Impots")) {
+                        player.money -= 200;
+    
+                        res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a payé les impots`, playerName: player.name });
+                    }
+                    if (nextCase.title.startsWith("Taxe")) {
+                        player.money -= 100;
+    
+                        res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a payé la taxe de luxe`, playerName: player.name });
+                    }
+                    if (nextCase.title.startsWith("Chance")) {
+                        const cardDB = game.chanceCards[0];
+                        game.chanceCards = game.chanceCards.slice(1);
+    
+                        const card = chancesCards.find((c) => c.name === cardDB.name);
+    
+                        if (card) {
+                            const action = card.action(player, game);
+    
+                            res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a tiré une carte chance: ${card.title}`, playerName: player.name });
+    
+                            if (card.type === "move") {
+                                player = action.player;
+                                game.chanceCards.push(cardDB);
+                            }
+                            if (card.type === "money") {
+                                player = action.player;
+                                game.chanceCards.push(cardDB);
+                            }  
+                            if (card.type === "jail") {
+                                if (!card.canBeKept) {
+                                    player = action.player;
+                                    game.chanceCards.push(cardDB);
+                                }
+    
+                                if (card.canBeKept) player.chanceCardOutOfJail = true;
+                            }
+    
+                            if (action.game !== game) game = action.game;
+                        }
+                    }
+                    if (nextCase.title.startsWith("Caisse")) {
+                        const cardDB = game.communityChestCards[0];
+                        game.communityChestCards = game.communityChestCards.slice(1);
+    
+                        const card = communityChestCards.find((c) => c.name === cardDB.name);
+    
+                        if (card) {
+                            const action = card.action(player, game);
+    
+                            res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a tiré une carte caisse de communauté: ${card.title}`, playerName: player.name });
+    
+                            if (card.type === "move") {
+                                player = action.player;
+                                game.communityChestCards.push(cardDB);
+                            }
+                            if (card.type === "money") {
+                                player = action.player;
+                                game.communityChestCards.push(cardDB);
+                            }  
+                            if (card.type === "jail") {
+                                if (!card.canBeKept) {
+                                    player = action.player;
+                                    game.communityChestCards.push(cardDB);
+                                }
+    
+                                if (card.canBeKept) player.communityChestCardOutOfJail = true;
+                            }
+                        }
+                    }
+                    if (nextCase.title.startsWith("Allez")) {
+                        nextPos = 10;
+                        player.inJail = true;
+                        player.jailTurns = 0;
+    
+                        res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `est allé en prison`, playerName: player.name });
+                    }
                 }
 
                 if (nextCase.title.startsWith("Impots")) {
@@ -141,6 +219,8 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                                     const rent = nextCase.rent![ownedGares.length - 1];
                                     player.money -= rent;
                                     propertyOwner!.money += rent;
+
+                                    res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a payé ${rent}€ à ${propertyOwner!.name} pour la gare ${property.name}`, playerName: player.name });
                                 }
 
                             }
@@ -150,6 +230,8 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                                 if (ownedCompagnies.length !== 0) {
                                     player.money -= rent;
                                     propertyOwner!.money += rent;
+
+                                    res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a payé ${rent}€ à ${propertyOwner!.name} pour la compagnie ${property.name}`, playerName: player.name });
                                 }
 
                             }
@@ -175,10 +257,14 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                                 if (property.hotel) {
                                     player.money -= nextCase.rent![5];
                                     propertyOwner!.money += nextCase.rent![5];
+
+                                    res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a payé ${nextCase.rent![5]}€ à ${propertyOwner!.name} pour l'hôtel ${property.name}`, playerName: player.name });
                                 }
                                 else {
                                     player.money -= rent;
                                     propertyOwner!.money += rent;
+
+                                    res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a payé ${rent}€ à ${propertyOwner!.name} pour la propriété ${property.name}`, playerName: player.name });
                                 }
                             }
 
