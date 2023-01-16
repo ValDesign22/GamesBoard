@@ -1,4 +1,4 @@
-import {MonopolyPlayer, NextSocketApiResponse} from "../../../../util/types";
+import {MonopolyHouse, MonopolyPlayer, NextSocketApiResponse} from "../../../../util/types";
 import {NextApiRequest} from "next";
 import mongoConnect from "../../../../mongodb/mongoConnect";
 import monopoly from "../../../../mongodb/models/monopoly";
@@ -16,9 +16,10 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
 
         if (playerIndex !== -1) {
             const playerToUpgrade = game.players[playerIndex];
+            const house = game.houses.find((h: any) => h.name === caseToUpgrade.title);
 
-            if (game.houses.find((h: any) => h.name === caseToUpgrade.title)) {
-                const house = game.houses.find((h: any) => h.name === caseToUpgrade.title);
+            if (house) {
+                if (house.owner && (house.owner !== player.name)) return res.status(400).end();
 
                 if (house.houses < 4) {
                     if (!caseToUpgrade.upgradePrice) return res.status(400).end();
@@ -26,8 +27,11 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                     if (playerToUpgrade.money >= caseToUpgrade.upgradePrice) {
                         house.houses += 1;
 
+                        game.houses = game.houses.map((h: MonopolyHouse) => {
+                            if (h.name === house.name) return house;
+                            return h;
+                        });
                         playerToUpgrade.money -= caseToUpgrade.upgradePrice;
-
                         game.players[playerIndex] = playerToUpgrade;
 
                         await game.save();
@@ -41,10 +45,12 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                     if (playerToUpgrade.money >= caseToUpgrade.upgradePrice) {
                         house.hotel = true;
 
+                        game.houses = game.houses.map((h: MonopolyHouse) => {
+                            if (h.name === house.name) return house;
+                            return h;
+                        });
                         playerToUpgrade.money -= caseToUpgrade.upgradePrice;
-
                         game.players[playerIndex] = playerToUpgrade;
-
                         await game.save();
 
                         res.socket.server.io.emit("monopoly-upgrade", {gameId, player, caseId, houseCount: house.houses, hotel: true, cases: game.houses, players: game.players});

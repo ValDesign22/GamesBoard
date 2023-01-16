@@ -217,13 +217,12 @@
 
                 .header {
                     display: flex;
-                    flex-direction: row;
+                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     width: 100%;
                     margin-bottom: 1rem;
 
-                    // .house => imgs
                     .houses {
                         display: flex;
                         flex-direction: row;
@@ -233,8 +232,8 @@
                         margin-bottom: 1rem;
 
                         img {
-                            width: 2rem;
-                            height: 2rem;
+                            width: 5rem;
+                            height: 5rem;
                             margin: 0 0.5rem;
                             cursor: pointer;
                         }

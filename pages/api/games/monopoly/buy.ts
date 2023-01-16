@@ -1,4 +1,4 @@
-import {MonopolyPlayer, NextSocketApiResponse} from "../../../../util/types";
+import {MonopolyHouse, MonopolyPlayer, NextSocketApiResponse} from "../../../../util/types";
 import {NextApiRequest} from "next";
 import mongoConnect from "../../../../mongodb/mongoConnect";
 import monopoly from "../../../../mongodb/models/monopoly";
@@ -20,22 +20,15 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
             const dbCase = game.houses.find((h: any) => h.name === caseToBuy.title);
 
             if (dbCase) {
-                if (dbCase.owner !== player.name) return res.status(400).end();
+                if (dbCase.owner && (dbCase.owner !== player.name)) return res.status(400).end();
                 if (!caseToBuy.price) return res.status(400).end();
 
                 if (playerToBuy.money >= caseToBuy.price) {
-                    game.houses.push({
-                        name: caseToBuy.title,
-                        color: caseToBuy.color || "white",
-                        price: caseToBuy.price,
-                        owner: player.name,
-                        houses: 0,
-                        hotel: false,
-                        hypothecated: false,
-                    });
-
+                    game.houses = game.houses.map((house: MonopolyHouse) => {
+                        if (house.name === dbCase.name) house.owner = player.name;
+                        return house;
+                    })
                     playerToBuy.money -= caseToBuy.price;
-
                     game.players[playerIndex] = playerToBuy;
 
                     await game.save();

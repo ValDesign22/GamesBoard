@@ -18,7 +18,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
     const [players, setPlayers] = useState<MonopolyPlayer[]>(props.game.players);
     const [player, setPlayer] = useState<MonopolyPlayer>(players.find(p => p.name === props.user.username)!);
     const [playerTurn, setPlayerTurn] = useState(players.find(p => p.name === props.game.playerTurn)!);
-    const [caseData, setCase] = useState(cases[player.position]);
+    const [caseData, setCase] = useState(cases[player?.position || 0]);
     const [showCase, setShowCase] = useState(false);
     const [properties, setProperties] = useState(props.game.houses);
     const [caseProperty, setCaseProperty] = useState(properties.find(p => p.name === caseData.title));
@@ -120,7 +120,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
 
     const diceRoll = () => {
         if (rolling) return;
-        if (!canRoll) return;
+        if (played) return;
 
         setRolling(true);
 
@@ -159,7 +159,6 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         setRolling(false);
         setPlayed(true);
         setCase(cases[moveMonopolyPlayer(player.position, dice1Num + dice2Num)]);
-        setCanRoll(false);
     }
 
     const drawPlayers = (players: MonopolyPlayer[]) => {
@@ -358,6 +357,8 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             player: player,
             gameId: props.game.id,
             caseId: cases.findIndex(c => c.title === caseData.title)
+        }).then(() => {
+            setShowCase(false);
         });
     }
 
@@ -366,6 +367,8 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             player: player,
             gameId: props.game.id,
             caseId: cases.findIndex(c => c.title === caseData.title)
+        }).then(() => {
+            setShowCase(false);
         });
     }
 
@@ -373,6 +376,8 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         axios.post('/api/games/monopoly/next', {
             player: player,
             gameId: props.game.id
+        }).then(() => {
+            setCanRoll(false);
         });
     }
 
@@ -385,6 +390,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         socket.on("connect", async () => {
             console.log("Connected to socket");
             setConnected(true);
+            setPlayerTurn(players.find((p: MonopolyPlayer) => p.name === props.game.playerTurn)!);
         });
 
         socket.on("monopoly-join", async (data: { gameId: string, username: string }) => {
@@ -401,7 +407,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 setStarted(gameData.data.started);
                 setPlayers(gameData.data.players);
 
-                const userPlayer = players.find(player => player.name = props.user?.username);
+                const userPlayer = players.find(player => player.name === props.user?.username);
                 if (userPlayer) setPlayer(userPlayer);
             }
         });
@@ -413,7 +419,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 setMessages([...messages]);
                 setPlayerTurn(players.find(player => player.name === props.game.owner)!);
 
-                const userPlayer = players.find(player => player.name = props.user?.username);
+                const userPlayer = players.find(player => player.name === props.user?.username);
                 if (userPlayer) setPlayer(userPlayer);
             }
         });
@@ -429,7 +435,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
             if (data.gameId === props.game.id) {
                 messages?.push({ username: data.player.name, message: `a fait ${data.dices.one} et ${data.dices.two}` });
                 setPlayers(data.players);
-                setPlayer(players.find(player => player.name === props.user.username)!);
+                setPlayer(data.players.find(player => player.name === props.user.username)!);
                 setMessages([...messages!]);
                 drawPlayers(players);
             }
@@ -453,7 +459,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 setMessages([...messages!]);
                 drawPlayers(players);
                 setPlayed(false);
-                setCanRoll(true);
+                setCanRoll(playerTurn.name === props.user.username);
             }
         });
 
@@ -604,9 +610,10 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                         </div>
                     </div>
 
-                    {(playerTurn.name === props.user.username)
-                    && started
-                    && (
+                    {playerTurn.name === props.user.username
+                        && started
+                        && canRoll
+                        && (
                         <div className="dice">
                             <button className="roll-btn" id="roll" onClick={diceRoll}>Lancer</button>
 
@@ -658,13 +665,14 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                                             {caseData.upgradePrice
                                                 && caseProperty.owner
                                                 && caseProperty.owner === props.user.username
-                                                && caseProperty.houses < 4
+                                                && caseProperty.houses <= 4
                                                 && !caseProperty.hotel
                                                 && (
                                                 <button className="upgrade" onClick={upgradeProperty}>Améliorer <span className="price">({caseData.upgradePrice}€)</span></button>
                                             )}
                                             {player.position === cases.findIndex(c => c.title === caseData.title)
-                                                && caseProperty.owner !== player.name
+                                                && !caseProperty.owner
+                                                && caseData.price
                                                 && played
                                                 && (
                                                 <button className="buy" onClick={buyProperty}>Acheter <span className="price">({caseData.price}€)</span></button>
