@@ -347,9 +347,21 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         }
     }
 
-    const upgradeProperty = () => {}
+    const buyProperty = (caseId: number) => {
+        axios.post('/api/games/monopoly/buy', {
+            player: player,
+            gameId: props.game.id,
+            caseId: caseId
+        });
+    }
 
-    const buyProperty = () => {}
+    const upgradeProperty = (caseId: number) => {
+        axios.post('/api/games/monopoly/upgrade', {
+            player: player,
+            gameId: props.game.id,
+            caseId: caseId
+        });
+    }
 
     const passTurn = () => {
         axios.post('/api/games/monopoly/next', {
@@ -531,7 +543,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 </div>
                 {played && (
                     <div className="played-buttons">
-                        <button className="buy" onClick={buyProperty}>Acheter</button>
+                        <button className="buy" onClick={() => buyProperty(player.position)}>Acheter</button>
                         <button className="pass" onClick={passTurn}>Passer</button>
                     </div>
                 )}
@@ -541,6 +553,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                     <div className="chanceCard">
                         <div className="inner">
                             <div className="front">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={"/monopoly/chance_card_back.png"} alt="Chance" />
                             </div>
                             <div className="back">
@@ -552,6 +565,7 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                     <div className="communityChestCard">
                         <div className="inner">
                             <div className="front">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={"/monopoly/community_chest_back.png"} alt="Community Chest" />
                             </div>
                             <div className="back">
@@ -608,13 +622,13 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                                                 && caseProperty.houses < 4
                                                 && !caseProperty.hotel
                                                 && (
-                                                <button className="upgrade" onClick={upgradeProperty}>Améliorer <span className="price">({caseData.upgradePrice}€)</span></button>
+                                                <button className="upgrade" onClick={() => upgradeProperty(player.position)}>Améliorer <span className="price">({caseData.upgradePrice}€)</span></button>
                                             )}
                                             {caseData.price
                                                 && player.position === cases.findIndex(c => c.title === caseData.title)
                                                 && !caseProperty.owner
                                                 && (
-                                                <button className="buy" onClick={buyProperty}>Acheter <span className="price">({caseData.price}€)</span></button>
+                                                <button className="buy" onClick={() => buyProperty(player.position)}>Acheter <span className="price">({caseData.price}€)</span></button>
                                             )}
                                         </div>
                                     )}
@@ -633,7 +647,9 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                         <div className="messages">
                             {messages?.map((message: any, index) => (
                                 <div key={index} className="message">
-                                    <span className="author">{message.username === props.user.username ? "Moi" : message.username}</span>
+                                    <span className="author" style={{ color: playerColor[players.findIndex(p => p.name === message.username)] }}>
+                                        {message.username === props.user.username ? "Moi" : message.username}
+                                    </span>
                                     <span className="content">{message.message}</span>
                                 </div>
                             ))}
