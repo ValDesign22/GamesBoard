@@ -14,6 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
     if (!game) return res.status(404).json({error: "Game not found"});
 
     if (game.players.length >= 8) return res.status(400).json({error: "Game is full"});
+    if (game.started) return res.status(400).json({error: "Game has already started"});
 
     if (!game.players.find((player: MonopolyPlayer) => player.name === username)) {
         game.players.push({

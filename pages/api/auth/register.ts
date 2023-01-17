@@ -2,7 +2,7 @@ import type { NextApiRequest } from 'next';
 import nodemailer from 'nodemailer';
 import mongoConnect from "../../../mongodb/mongoConnect";
 import users from "../../../mongodb/models/users";
-import {encodePassword, generateConfirmCode, generateUniqueID} from "../../../util/authFunctions";
+import {encodePassword, generateConfirmCode, generateUniqueID} from "../../../util/functions/authFunctions";
 import {NextSocketApiResponse} from "../../../util/types";
 
 export default async function handler(req: NextApiRequest, res: NextSocketApiResponse) {

@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import {GetServerSideProps} from "next";
-import {parseUser} from "../../util/authFunctions";
+import {parseUser} from "../../util/functions/authFunctions";
 
 export default function Games(props: { user: { username: string, id: string } }) {
     return (

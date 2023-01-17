@@ -2,7 +2,7 @@ import {MonopolyHouse, MonopolyPlayer, NextSocketApiResponse} from "../../../../
 import {NextApiRequest} from "next";
 import monopoly from "../../../../mongodb/models/monopoly";
 import mongoConnect from "../../../../mongodb/mongoConnect";
-import {moveMonopolyPlayer} from "../../../../util/gameFunctions";
+import {moveMonopolyPlayer} from "../../../../util/functions/gameFunctions";
 import {cases, chancesCards, communityChestCards} from "../../../../util/constants/monopoly";
 
 export default async function handler(req: NextApiRequest, res: NextSocketApiResponse) {
@@ -32,7 +32,12 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
 
                     res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a payé 50€ pour sortir de prison`, playerName: player.name });
                 } else {
-                    if (!doubles) player.jailTurns++;
+                    if (!doubles) {
+                        player.jailTurns++;
+                        player.inJail = true;
+
+                        res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `reste en prison`, playerName: player.name });
+                    }
                     else {
                         player.inJail = false;
                         player.jailTurns = 0;
@@ -284,6 +289,9 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                     }
                 }
             }
+
+            if (canReRoll) res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a fait un double de six, il peut rejouer`, playerName: player.name });
+
 
             const newPlayer = {
                 name: player.name,

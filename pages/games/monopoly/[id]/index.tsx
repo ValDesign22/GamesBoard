@@ -4,10 +4,10 @@ import Image from "next/image";
 import {useEffect, useRef, useState} from "react";
 import {MonopolyGame, MonopolyHouse, MonopolyPlayer} from "../../../../util/types";
 import axios from "axios";
-import {parseUser} from "../../../../util/authFunctions";
+import {parseUser} from "../../../../util/functions/authFunctions";
 import SocketIOClient from "socket.io-client";
 import {cases} from "../../../../util/constants/monopoly";
-import { moveMonopolyPlayer } from "../../../../util/gameFunctions";
+import { moveMonopolyPlayer } from "../../../../util/functions/gameFunctions";
 
 export default function Room(props: {game: MonopolyGame, user: {username: string, id: string}}) {
     const [rolling, setRolling] = useState(false);
@@ -376,8 +376,6 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
         axios.post('/api/games/monopoly/next', {
             player: player,
             gameId: props.game.id
-        }).then(() => {
-            setCanRoll(false);
         });
     }
 
@@ -438,6 +436,8 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                 setPlayer(data.players.find(player => player.name === props.user.username)!);
                 setMessages([...messages!]);
                 drawPlayers(players);
+                setPlayed(true);
+                setCanRoll(false);
             }
         });
 
@@ -610,12 +610,15 @@ export default function Room(props: {game: MonopolyGame, user: {username: string
                         </div>
                     </div>
 
-                    {playerTurn.name === props.user.username
-                        && started
-                        && canRoll
+                    {started
                         && (
                         <div className="dice">
-                            <button className="roll-btn" id="roll" onClick={diceRoll}>Lancer</button>
+                            {started 
+                                && playerTurn.name === props.user.username
+                                && !played
+                                && canRoll
+                                && <button className="roll-btn" id="roll" onClick={diceRoll}>Lancer</button>
+                            }
 
                             <div className="dice-container">
                                 <div id="dice1">

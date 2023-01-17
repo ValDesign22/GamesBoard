@@ -2,10 +2,10 @@ import Head from "next/head";
 import {FormEvent, useState} from "react";
 import axios from "axios";
 import {useRouter} from "next/router";
-import {generateGameId} from "../../../util/gameFunctions";
+import {generateGameId} from "../../../util/functions/gameFunctions";
 import {Game} from "../../../util/types";
 import {GetServerSideProps} from "next";
-import {parseUser} from "../../../util/authFunctions";
+import {parseUser} from "../../../util/functions/authFunctions";
 
 export default function Monopoly(props: { games: Game[], user: { username: string, id: string } }) {
     const [roomCode, setRoomCode] = useState<string>("");
