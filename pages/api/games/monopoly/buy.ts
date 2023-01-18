@@ -15,26 +15,25 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
         const caseToBuy = cases[caseId];
 
         if (playerIndex !== -1) {
-            const playerToBuy = game.players[playerIndex];
+            const playerToUpdate = game.players[playerIndex];
 
             const dbCase = game.houses.find((h: any) => h.name === caseToBuy.title);
 
             if (dbCase) {
-                if (dbCase.owner && (dbCase.owner !== player.name)) return res.status(400).end();
-                if (!caseToBuy.price) return res.status(400).end();
+                if (!caseToBuy.price || (dbCase.owner && (dbCase.owner !== player.name))) return res.status(400).end();
 
-                if (playerToBuy.money >= caseToBuy.price) {
+                if (playerToUpdate.money >= caseToBuy.price) {
                     game.houses = game.houses.map((house: MonopolyHouse) => {
                         if (house.name === dbCase.name) house.owner = player.name;
                         return house;
                     })
-                    playerToBuy.money -= caseToBuy.price;
-                    game.players[playerIndex] = playerToBuy;
+                    playerToUpdate.money -= caseToBuy.price;
+                    game.players[playerIndex] = playerToUpdate;
 
                     await game.save();
 
-                    res.socket.server.io.emit("monopoly-buy", {gameId, player, caseId, cases: game.houses, players: game.players});
-                    res.socket.server.io.emit("monopoly-next", {gameId, player});
+                    res.socket.server.io.emit("monopoly-buy", {gameId, player: playerToUpdate, caseId, cases: game.houses, players: game.players});
+                    res.socket.server.io.emit("monopoly-next", {gameId, player: playerToUpdate});
                 }
             }
         }

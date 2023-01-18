@@ -28,6 +28,8 @@ export interface MonopolyHouse {
 export interface MonopolyCard {
     title: string;
     name: string;
+    type: "move" | "money" | "jail";
+    action: (player: MonopolyPlayer, game: MonopolyGame) => { player: MonopolyPlayer; game: MonopolyGame };
     canBeKept: boolean;
 }
 export interface Game {

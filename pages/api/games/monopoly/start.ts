@@ -11,9 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
 
     const gameFind = await monopoly.findOne({ id: gameId });
 
-    if (!gameFind) return res.status(404).json({ error: "Game not found" });
-
-    if (gameFind.started) return res.status(400).json({ error: "Game already started" });
+    if (!gameFind || gameFind.started) return res.status(404).json({ error: "Game not found or already started" });
 
     gameFind.started = true;
     await gameFind.save();

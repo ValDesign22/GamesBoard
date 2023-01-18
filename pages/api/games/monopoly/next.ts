@@ -12,9 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
 
     if (!game) return res.status(404).json({ error: "Game not found" });
 
-    const dbPlayer = game.players.find((p: MonopolyPlayer) => p.name === player.name);
-
-    res.socket.server.io.emit("monopoly-next", {gameId, player: dbPlayer});
+    res.socket.server.io.emit("monopoly-next", {gameId, player: game.players.find((p: MonopolyPlayer) => p.name === player.name)});
 
     res.status(200).end();
 }

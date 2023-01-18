@@ -15,46 +15,26 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
         const caseToUpgrade = cases[caseId];
 
         if (playerIndex !== -1) {
-            const playerToUpgrade = game.players[playerIndex];
+            const playerToUpdate = game.players[playerIndex];
             const house = game.houses.find((h: any) => h.name === caseToUpgrade.title);
 
             if (house) {
-                if (house.owner && (house.owner !== player.name)) return res.status(400).end();
+                if (!caseToUpgrade.upgradePrice || (house.owner && (house.owner !== player.name))) return res.status(400).end();
 
-                if (house.houses < 4) {
-                    if (!caseToUpgrade.upgradePrice) return res.status(400).end();
+                if (playerToUpdate.money >= caseToUpgrade.upgradePrice) {
+                    house.house < 4 ? house.houses += 1 : house.houses = 4;
+                    house.house < 4 ? house.hotel = false : house.hotel = true;
 
-                    if (playerToUpgrade.money >= caseToUpgrade.upgradePrice) {
-                        house.houses += 1;
+                    game.houses = game.houses.map((h: MonopolyHouse) => {
+                        if (h.name === house.name) return house;
+                        return h;
+                    });
+                    playerToUpdate.money -= caseToUpgrade.upgradePrice;
+                    game.players[playerIndex] = playerToUpdate;
 
-                        game.houses = game.houses.map((h: MonopolyHouse) => {
-                            if (h.name === house.name) return house;
-                            return h;
-                        });
-                        playerToUpgrade.money -= caseToUpgrade.upgradePrice;
-                        game.players[playerIndex] = playerToUpgrade;
+                    await game.save();
 
-                        await game.save();
-
-                        res.socket.server.io.emit("monopoly-upgrade", {gameId, player, caseId, houseCount: house.houses, hotel: false, cases: game.houses, players: game.players});
-                    }
-                }
-                else {
-                    if (!caseToUpgrade.upgradePrice) return res.status(400).end();
-
-                    if (playerToUpgrade.money >= caseToUpgrade.upgradePrice) {
-                        house.hotel = true;
-
-                        game.houses = game.houses.map((h: MonopolyHouse) => {
-                            if (h.name === house.name) return house;
-                            return h;
-                        });
-                        playerToUpgrade.money -= caseToUpgrade.upgradePrice;
-                        game.players[playerIndex] = playerToUpgrade;
-                        await game.save();
-
-                        res.socket.server.io.emit("monopoly-upgrade", {gameId, player, caseId, houseCount: house.houses, hotel: true, cases: game.houses, players: game.players});
-                    }
+                    res.socket.server.io.emit("monopoly-upgrade", {gameId, player: playerToUpdate, caseId, houseCount: house.houses, hotel: house.hotel, cases: game.houses, players: game.players});
                 }
             }
         }

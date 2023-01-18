@@ -4,6 +4,7 @@ import monopoly from "../../../../mongodb/models/monopoly";
 import mongoConnect from "../../../../mongodb/mongoConnect";
 import {moveMonopolyPlayer} from "../../../../util/functions/gameFunctions";
 import {cases, chancesCards, communityChestCards} from "../../../../util/constants/monopoly";
+import { DepartCase } from "../../../../util/functions/monopoly";
 
 export default async function handler(req: NextApiRequest, res: NextSocketApiResponse) {
     await mongoConnect();
@@ -21,8 +22,8 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
             const doubles = dices[0] === dices[1];
             const canReRoll = sum === 12;
 
-            let nextPos = moveMonopolyPlayer(player.position, sum);
-            let currentPos = player.position;
+            const nextPos = moveMonopolyPlayer(player.position, sum);
+            const currentPos = player.position;
 
             if (player.inJail) {
                 if (player.jailTurns === 3) {
@@ -50,89 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
             if (!player.inJail) {
                 const nextCase = cases[nextPos];
 
-                if (nextCase.title.startsWith("Depart") || (player.position > nextPos && player.position > 25 && nextPos < 15)) {
-                    player.money += 200;
-
-                    res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `est passé par la case départ et a gagné 200€`, playerName: player.name });
-
-                    if (nextCase.title.startsWith("Impots")) {
-                        player.money -= 200;
-    
-                        res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a payé les impots`, playerName: player.name });
-                    }
-                    if (nextCase.title.startsWith("Taxe")) {
-                        player.money -= 100;
-    
-                        res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a payé la taxe de luxe`, playerName: player.name });
-                    }
-                    if (nextCase.title.startsWith("Chance")) {
-                        const cardDB = game.chanceCards[0];
-                        game.chanceCards = game.chanceCards.slice(1);
-    
-                        const card = chancesCards.find((c) => c.name === cardDB.name);
-    
-                        if (card) {
-                            const action = card.action(player, game);
-    
-                            res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a tiré une carte chance: ${card.title}`, playerName: player.name });
-    
-                            if (card.type === "move") {
-                                player = action.player;
-                                game.chanceCards.push(cardDB);
-                            }
-                            if (card.type === "money") {
-                                player = action.player;
-                                game.chanceCards.push(cardDB);
-                            }  
-                            if (card.type === "jail") {
-                                if (!card.canBeKept) {
-                                    player = action.player;
-                                    game.chanceCards.push(cardDB);
-                                }
-    
-                                if (card.canBeKept) player.chanceCardOutOfJail = true;
-                            }
-    
-                            if (action.game !== game) game = action.game;
-                        }
-                    }
-                    if (nextCase.title.startsWith("Caisse")) {
-                        const cardDB = game.communityChestCards[0];
-                        game.communityChestCards = game.communityChestCards.slice(1);
-    
-                        const card = communityChestCards.find((c) => c.name === cardDB.name);
-    
-                        if (card) {
-                            const action = card.action(player, game);
-    
-                            res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `a tiré une carte caisse de communauté: ${card.title}`, playerName: player.name });
-    
-                            if (card.type === "move") {
-                                player = action.player;
-                                game.communityChestCards.push(cardDB);
-                            }
-                            if (card.type === "money") {
-                                player = action.player;
-                                game.communityChestCards.push(cardDB);
-                            }  
-                            if (card.type === "jail") {
-                                if (!card.canBeKept) {
-                                    player = action.player;
-                                    game.communityChestCards.push(cardDB);
-                                }
-    
-                                if (card.canBeKept) player.communityChestCardOutOfJail = true;
-                            }
-                        }
-                    }
-                    if (nextCase.title.startsWith("Allez")) {
-                        nextPos = 10;
-                        player.inJail = true;
-                        player.jailTurns = 0;
-    
-                        res.socket.server.io.emit("monopoly-chat", { gameId: game.id, message: `est allé en prison`, playerName: player.name });
-                    }
-                }
+                if (nextCase.title.startsWith("Depart") || (player.position > nextPos && player.position > 25 && nextPos < 15)) DepartCase(player, res, nextCase, game);
 
                 if (nextCase.title.startsWith("Impots")) {
                     player.money -= 200;
@@ -205,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                     }
                 }
                 if (nextCase.title.startsWith("Allez")) {
-                    nextPos = 10;
+                    player.position = 10;
                     player.inJail = true;
                     player.jailTurns = 0;
 
